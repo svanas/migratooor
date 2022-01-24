@@ -1,0 +1,74 @@
+object frmMain: TfrmMain
+  Left = 0
+  Top = 0
+  Caption = 'Migratooor'
+  ClientHeight = 479
+  ClientWidth = 572
+  FormFactor.Width = 320
+  FormFactor.Height = 480
+  FormFactor.Devices = [Desktop]
+  DesignerMasterStyle = 0
+  object lblAddress: TLabel
+    Position.X = 8.000000000000000000
+    Position.Y = 10.000000000000000000
+    Size.Width = 74.000000000000000000
+    Size.Height = 17.000000000000000000
+    Size.PlatformDefault = False
+    Text = 'My address:'
+    TabOrder = 0
+  end
+  object edtAddress: TEdit
+    Touch.InteractiveGestures = [LongTap, DoubleTap]
+    Anchors = [akLeft, akTop, akRight]
+    TabOrder = 1
+    Position.X = 88.000000000000000000
+    Position.Y = 8.000000000000000000
+    Size.Width = 280.000000000000000000
+    Size.Height = 22.000000000000000000
+    Size.PlatformDefault = False
+    TextPrompt = '0x0'
+  end
+  object cboChain: TComboBox
+    Anchors = [akTop, akRight]
+    Position.X = 376.000000000000000000
+    Position.Y = 8.000000000000000000
+    TabOrder = 2
+  end
+  object btnScan: TButton
+    Anchors = [akTop, akRight]
+    Position.X = 484.000000000000000000
+    Position.Y = 8.000000000000000000
+    TabOrder = 3
+    Text = 'Scan'
+    OnClick = btnScanClick
+  end
+  object Grid: TGrid
+    Anchors = [akLeft, akTop, akRight, akBottom]
+    CanFocus = True
+    ClipChildren = True
+    Position.X = 8.000000000000000000
+    Position.Y = 38.000000000000000000
+    Size.Width = 556.000000000000000000
+    Size.Height = 433.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 4
+    RowHeight = 32.000000000000000000
+    RowCount = 0
+    Options = [Editing, ColumnResize, ColumnMove, ColLines, RowLines, RowSelect, Tabs, HeaderClick, AutoDisplacement]
+    OnGetValue = GridGetValue
+    Viewport.Width = 552.000000000000000000
+    Viewport.Height = 429.000000000000000000
+    object colCheck: TCheckColumn
+      HorzAlign = Center
+      Size.Width = 32.000000000000000000
+    end
+    object colImage: TImageColumn
+      ReadOnly = True
+      Size.Width = 32.000000000000000000
+    end
+    object colName: TStringColumn
+      ReadOnly = True
+      Size.Width = 200.000000000000000000
+    end
+  end
+end
