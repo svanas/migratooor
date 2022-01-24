@@ -12,7 +12,7 @@ if your wallet...
 
 ## How does it work?
 
-First your wallet is scanned to find your tokens. A table will be shown displaying your balance of each token. You can then (un)check each token to move. Migratooor will transfer each token, and all you need to do is confirm one transaction (and one transation only).
+First your wallet is scanned to find your tokens. A table will be shown displaying your balance of each token. You can then (un)check each token to move. Migratooor will transfer each token, and all you need to do is confirm one transaction (and one transaction only).
 
 ## Does this reduce the number of transactions needed?
 
