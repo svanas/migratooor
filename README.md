@@ -17,3 +17,12 @@ First your wallet is scanned to find your tokens. A table will be shown displayi
 ## Does this reduce the number of transactions needed?
 
 It does not. Unless you use a smart contract wallet, there is no way to reduce the number of transactions. This app simply makes the process less tedious.
+
+## What networks does this thing support?
+
+At the time of this writing, migratooor supports the following [EVM-compatible](https://chainlist.org) networks:
+* [Ethereum](https://ethereum.org)
+* [Binance Smart Chain](https://www.binance.org/en/smartChain)
+* [Polygon](https://polygon.technology)
+* [Optimism](https://optimism.io)
+* [Arbitrum](https://arbitrum.io)
