@@ -10,7 +10,7 @@ uses
   web3.utils;
 
 const
-  CHAINS: array[0..3] of TChain = (Ethereum, Polygon, Optimism, Arbitrum);
+  CHAINS: array[0..4] of TChain = (Ethereum, BSC, Polygon, Optimism, Arbitrum);
 
 const
   INFURA_PROJECT_ID = '9aa3d95b3bc440fa88ea12eaa4456161';
