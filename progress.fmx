@@ -5,7 +5,7 @@ object frmProgress: TfrmProgress
   BorderStyle = Single
   Caption = 'Migratooor'
   ClientHeight = 94
-  ClientWidth = 338
+  ClientWidth = 394
   Position = MainFormCenter
   FormStyle = StayOnTop
   FormFactor.Width = 320
@@ -14,7 +14,7 @@ object frmProgress: TfrmProgress
   DesignerMasterStyle = 0
   object btnCancel: TButton
     Cancel = True
-    Position.X = 129.000000000000000000
+    Position.X = 157.000000000000000000
     Position.Y = 56.000000000000000000
     TabOrder = 0
     Text = 'Cancel'
@@ -28,12 +28,12 @@ object frmProgress: TfrmProgress
     Size.PlatformDefault = False
   end
   object lblMessage: TLabel
-    Position.X = 64.000000000000000000
+    Position.X = 56.000000000000000000
     Position.Y = 16.000000000000000000
-    Size.Width = 265.000000000000000000
+    Size.Width = 322.000000000000000000
     Size.Height = 16.000000000000000000
     Size.PlatformDefault = False
-    Text = 'Scanning for tokens in your wallet. Please wait...'
+    TextSettings.HorzAlign = Center
     TabOrder = 2
   end
 end

@@ -4,10 +4,7 @@ interface
 
 uses
   // web3
-  web3,
-  web3.eth.tx,
-  web3.eth.types,
-  web3.utils;
+  web3;
 
 const
   CHAINS: array[0..4] of TChain = (Ethereum, BSC, Polygon, Optimism, Arbitrum);
@@ -39,7 +36,11 @@ uses
   Posix.Stdlib,
 {$ENDIF POSIX}
   // FireMonkey
-  FMX.Dialogs;
+  FMX.Dialogs,
+  // web3
+  web3.eth.tx,
+  web3.eth.types,
+  web3.utils;
 
 procedure ShowError(const msg: string);
 begin

@@ -34,6 +34,7 @@ type
     colCheck: TCheckColumn;
     colImage: TImageColumn;
     colName: TStringColumn;
+    colBalance: TFloatColumn;
     Header: TPanel;
     chkSelectAll: TCheckBox;
     procedure btnScanClick(Sender: TObject);
@@ -43,12 +44,12 @@ type
     procedure GridSetValue(Sender: TObject; const ACol, ARow: Integer;
       const Value: TValue);
   private
-    FAssets: TArray<IAsset>;
+    FAssets: TAssets;
     procedure Address(callback: TAsyncAddress);
+    class function Cancelled: Boolean;
     function Chain: TChain;
     procedure Clear;
     function Client: IWeb3;
-    procedure Enumerate(foreach: TProc<Integer, TProc>; done: TProc);
     class function Ethereum: IWeb3;
     procedure InitUI;
     class procedure Synchronize(P: TThreadProcedure);
@@ -67,6 +68,8 @@ implementation
 uses
   // Delphi
   System.Net.HttpClient,
+  // Velthuis' BigNumbers
+  Velthuis.BigIntegers,
   // web3
   web3.eth,
   web3.eth.infura,
@@ -99,6 +102,7 @@ begin
     0: Value := FAssets[ARow].Checked;
     1: Value := FAssets[ARow].Bitmap;
     2: Value := FAssets[ARow].Token.Name;
+    3: Value := FAssets[ARow].Balance;
   end;
 end;
 
@@ -124,6 +128,13 @@ begin
     callback(EMPTY_ADDRESS, nil)
   else
     TAddress.New(Ethereum, edtAddress.Text, callback);
+end;
+
+class function TfrmMain.Cancelled: Boolean;
+begin
+  Result := Assigned(frmProgress) and frmProgress.Cancelled;
+  if Result then
+    if frmProgress.Visible then frmProgress.Close;
 end;
 
 function TfrmMain.Chain: TChain;
@@ -157,32 +168,6 @@ begin
   edtAddress.SetFocus;
 end;
 
-procedure TfrmMain.Enumerate(foreach: TProc<Integer, TProc>; done: TProc);
-begin
-  var next: TProc<Integer>;
-
-  next := procedure(idx: Integer)
-  begin
-    if idx >= Length(FAssets) then
-    begin
-      if Assigned(done) then done;
-      EXIT;
-    end;
-    foreach(idx, procedure
-    begin
-      next(idx + 1);
-    end);
-  end;
-
-  if Length(FAssets) = 0 then
-  begin
-    if Assigned(done) then done;
-    EXIT;
-  end;
-
-  next(0);
-end;
-
 class procedure TfrmMain.Synchronize(P: TThreadProcedure);
 begin
   if TThread.CurrentThread.ThreadID = MainThreadId then
@@ -198,64 +183,111 @@ procedure TfrmMain.UpdateUI;
 begin
   Self.Clear;
 
-  web3.eth.tokenlists.tokens(Chain, procedure(tokens: TArray<IToken>; err: IError)
+  // step #1: resolve the ENS name
+  Self.Address(procedure(owner: TAddress; err: IError)
   begin
-    if Assigned(frmProgress) and frmProgress.Cancelled then
-    begin
-      if frmProgress.Visible then frmProgress.Close;
-      EXIT;
-    end;
+    if Self.Cancelled then EXIT;
 
     if Assigned(err) then
     begin
-      ShowError(err, Chain);
+      common.ShowError(err, Chain);
       EXIT;
     end;
 
-    SetLength(FAssets, Length(tokens));
-    for var idx := 0 to Length(tokens) - 1 do
-      FAssets[idx] := asset.Create(tokens[idx]);
+    // step #2: get the tokens on this chain that Uniswap knows about
+    web3.eth.tokenlists.tokens(Chain, procedure(tokens: TTokens; err: IError)
+    begin
+      if Self.Cancelled then EXIT;
 
-    Enumerate(
-      // foreach
-      procedure(idx: Integer; next: TProc)
+      if Assigned(err) then
       begin
-        if Assigned(frmProgress) and frmProgress.Cancelled then
+        common.ShowError(err, Chain);
+        EXIT;
+      end;
+
+      if Assigned(frmProgress) then Self.Synchronize(procedure
+      begin
+        frmProgress.Count := Length(tokens);
+      end);
+
+      // step #3: get your balance for each token
+      tokens.Enumerate(
+        // foreach
+        procedure(idx: Integer; next: TProc)
         begin
-          if frmProgress.Visible then frmProgress.Close;
-          EXIT;
-        end;
-        if FAssets[idx].Token.LogoURI.IsEmpty then
-        begin
-          next;
-          EXIT;
-        end;
-        web3.http.get(FAssets[idx].Token.LogoURI.Replace('ipfs://', IPFS_GATEWAY), procedure(img: IHttpResponse; err: IError)
-        begin
-          if Assigned(err) then
+          if Assigned(frmProgress) then Self.Synchronize(procedure
           begin
-            next;
-            EXIT;
-          end;
-          try
-            FAssets[idx].Bitmap.LoadFromStream(img.ContentStream);
-          except end;
-          Synchronize(procedure
-          begin
-            colImage.UpdateCell(idx);
+            frmProgress.Step := idx;
           end);
-          next;
-        end);
-      end,
-      // done
-      procedure
-      begin
-        if Assigned(frmProgress) and frmProgress.Visible then frmProgress.Close;
-      end
-    );
 
-    Grid.RowCount := Length(FAssets);
-    Self.Invalidate;
+          tokens[idx].Balance(Client, owner, procedure(balance: BigInteger; err: IError)
+          begin
+            if Self.Cancelled then EXIT;
+
+            if Assigned(err) then
+            begin
+              next;
+              EXIT;
+            end;
+
+            if balance.IsPositive then
+            begin
+              FAssets := FAssets + [asset.Create(tokens[idx], balance)];
+              Self.Synchronize(procedure
+              begin
+                Grid.RowCount := Length(FAssets);
+                Self.Invalidate;
+              end);
+            end;
+
+            next;
+          end);
+        end,
+        // done
+        procedure
+        begin
+          // step #4: download and display the token icon
+          Self.FAssets.Enumerate(
+            // foreach
+            procedure(idx: Integer; next: TProc)
+            begin
+              if FAssets[idx].Token.LogoURI.IsEmpty then
+              begin
+                next;
+                EXIT;
+              end;
+
+              web3.http.get(FAssets[idx].Token.LogoURI.Replace('ipfs://', IPFS_GATEWAY), procedure(img: IHttpResponse; err: IError)
+              begin
+                if Self.Cancelled then EXIT;
+
+                if Assigned(err) then
+                begin
+                  next;
+                  EXIT;
+                end;
+
+                try
+                  FAssets[idx].Bitmap.LoadFromStream(img.ContentStream);
+                except end;
+
+                Synchronize(procedure
+                begin
+                  colImage.UpdateCell(idx);
+                end);
+
+                next;
+              end);
+            end,
+            // done
+            procedure
+            begin
+              if Assigned(frmProgress) and frmProgress.Visible then frmProgress.Close;
+            end
+          );
+        end
+      );
+    end);
   end);
 
   if not Assigned(frmProgress) then frmProgress := TfrmProgress.Create(Self);

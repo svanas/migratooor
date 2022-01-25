@@ -2,7 +2,7 @@ object frmMain: TfrmMain
   Left = 0
   Top = 0
   Caption = 'Migratooor'
-  ClientHeight = 512
+  ClientHeight = 511
   ClientWidth = 572
   FormFactor.Width = 320
   FormFactor.Height = 480
@@ -47,7 +47,7 @@ object frmMain: TfrmMain
     CanFocus = True
     ClipChildren = True
     Position.X = 8.000000000000000000
-    Position.Y = 71.000000000000000000
+    Position.Y = 70.000000000000000000
     Size.Width = 556.000000000000000000
     Size.Height = 433.000000000000000000
     Size.PlatformDefault = False
@@ -71,19 +71,24 @@ object frmMain: TfrmMain
       ReadOnly = True
       Size.Width = 200.000000000000000000
     end
+    object colBalance: TFloatColumn
+      ReadOnly = True
+      DecimalDigits = 8
+      Size.Width = 120.000000000000000000
+    end
   end
   object Header: TPanel
     Anchors = [akLeft, akTop, akRight]
     Position.X = 8.000000000000000000
-    Position.Y = 35.000000000000000000
+    Position.Y = 38.000000000000000000
     Size.Width = 556.000000000000000000
-    Size.Height = 35.000000000000000000
+    Size.Height = 32.000000000000000000
     Size.PlatformDefault = False
     TabOrder = 4
     object chkSelectAll: TCheckBox
       IsChecked = True
       Position.X = 9.000000000000000000
-      Position.Y = 8.000000000000000000
+      Position.Y = 7.000000000000000000
       TabOrder = 0
       Text = 'Select all tokens'
       OnChange = chkSelectAllChange
