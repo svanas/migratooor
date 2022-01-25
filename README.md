@@ -18,7 +18,7 @@ First your wallet is scanned to find your tokens. A table will be shown displayi
 
 It does not. Unless you use a smart contract wallet, there is no way to reduce the number of transactions. This app simply makes the process less tedious.
 
-## What networks does this thing support?
+## What networks does this app support?
 
 At the time of this writing, migratooor supports the following [EVM-compatible](https://chainlist.org) networks:
 * [Ethereum](https://ethereum.org)
@@ -26,3 +26,11 @@ At the time of this writing, migratooor supports the following [EVM-compatible](
 * [Polygon](https://polygon.technology)
 * [Optimism](https://optimism.io)
 * [Arbitrum](https://arbitrum.io)
+
+## Is this app secure?
+
+Maybe. No independent audit has been or will be commissioned. You are encouraged to read the code and decide for yourself whether it is secure.
+
+## Disclaimer
+
+Migratooor is provided free of charge. There is no warranty. The authors do not assume any responsibility for bugs, vulnerabilities, or any other technical defects. Use at your own risk.
