@@ -12,7 +12,6 @@ uses
   FMX.Controls.Presentation,
   FMX.Edit,
   FMX.Forms,
-  FMX.Graphics,
   FMX.Grid,
   FMX.Grid.Style,
   FMX.ListBox,
@@ -21,8 +20,9 @@ uses
   FMX.Types,
   // web3
   web3,
-  web3.eth.tokenlists,
-  web3.eth.types;
+  web3.eth.types,
+  // Project
+  asset;
 
 type
   TfrmMain = class(TForm)
@@ -34,15 +34,19 @@ type
     colCheck: TCheckColumn;
     colImage: TImageColumn;
     colName: TStringColumn;
+    Header: TPanel;
+    chkSelectAll: TCheckBox;
     procedure btnScanClick(Sender: TObject);
+    procedure chkSelectAllChange(Sender: TObject);
     procedure GridGetValue(Sender: TObject; const ACol, ARow: Integer;
       var Value: TValue);
+    procedure GridSetValue(Sender: TObject; const ACol, ARow: Integer;
+      const Value: TValue);
   private
-    FBitmaps: TArray<TBitmap>;
-    FChecked: TArray<Boolean>;
-    FTokens: TArray<IToken>;
+    FAssets: TArray<IAsset>;
     procedure Address(callback: TAsyncAddress);
     function Chain: TChain;
+    procedure Clear;
     function Client: IWeb3;
     procedure Enumerate(foreach: TProc<Integer, TProc>; done: TProc);
     class function Ethereum: IWeb3;
@@ -66,9 +70,11 @@ uses
   // web3
   web3.eth,
   web3.eth.infura,
+  web3.eth.tokenlists,
   web3.http,
   // Project
-  common;
+  common,
+  progress;
 
 //------------------------------- event handlers -------------------------------
 
@@ -77,17 +83,32 @@ begin
   UpdateUI;
 end;
 
+procedure TfrmMain.chkSelectAllChange(Sender: TObject);
+begin
+  for var idx := 0 to Length(FAssets) - 1 do
+  begin
+    FAssets[idx].Check(chkSelectAll.IsChecked);
+    colCheck.UpdateCell(idx);
+  end;
+end;
+
 procedure TfrmMain.GridGetValue(Sender: TObject; const ACol, ARow: Integer;
   var Value: TValue);
 begin
   case ACol of
-    0: Value := FChecked[ARow];
-    1: Value := FBitmaps[ARow];
-    2: Value := FTokens[ARow].Name;
+    0: Value := FAssets[ARow].Checked;
+    1: Value := FAssets[ARow].Bitmap;
+    2: Value := FAssets[ARow].Token.Name;
   end;
 end;
 
-{ public }
+procedure TfrmMain.GridSetValue(Sender: TObject; const ACol, ARow: Integer;
+  const Value: TValue);
+begin
+  if ACol = 0 then FAssets[ARow].Check(Value.AsBoolean);
+end;
+
+//---------------------------------- public -----------------------------------
 
 constructor TfrmMain.Create(aOwner: TComponent);
 begin
@@ -110,6 +131,14 @@ begin
   Result := TChain(cboChain.Items.Objects[cboChain.ItemIndex]);
 end;
 
+procedure TfrmMain.Clear;
+begin
+  FAssets := [];
+  Grid.RowCount := 0;
+  chkSelectAll.IsChecked := True;
+  Self.Invalidate;
+end;
+
 function TfrmMain.Client: IWeb3;
 begin
   Result := TWeb3.Create(Chain, web3.eth.infura.endpoint(Chain, INFURA_PROJECT_ID));
@@ -122,8 +151,8 @@ end;
 
 procedure TfrmMain.InitUI;
 begin
-  for var C in CHAINS do
-    cboChain.Items.AddObject(C.Name, TObject(C));
+  for var chain in CHAINS do
+    cboChain.Items.AddObject(chain.Name, TObject(chain));
   cboChain.ItemIndex := 0;
   edtAddress.SetFocus;
 end;
@@ -134,7 +163,7 @@ begin
 
   next := procedure(idx: Integer)
   begin
-    if idx >= Length(FTokens) then
+    if idx >= Length(FAssets) then
     begin
       if Assigned(done) then done;
       EXIT;
@@ -145,7 +174,7 @@ begin
     end);
   end;
 
-  if Length(FTokens) = 0 then
+  if Length(FAssets) = 0 then
   begin
     if Assigned(done) then done;
     EXIT;
@@ -167,47 +196,49 @@ end;
 
 procedure TfrmMain.UpdateUI;
 begin
-  tokens(Chain, procedure(tokens: TArray<IToken>; err: IError)
+  Self.Clear;
+
+  web3.eth.tokenlists.tokens(Chain, procedure(tokens: TArray<IToken>; err: IError)
   begin
+    if Assigned(frmProgress) and frmProgress.Cancelled then
+    begin
+      if frmProgress.Visible then frmProgress.Close;
+      EXIT;
+    end;
+
     if Assigned(err) then
     begin
       ShowError(err, Chain);
       EXIT;
     end;
 
-    FTokens := tokens;
-
-    SetLength(FChecked, Length(FTokens));
-    for var I := 0 to Length(FChecked) - 1 do
-      FChecked[I] := True;
-
-    if Length(FBitmaps) > 0 then
-    begin
-      for var bmp in FBitmaps do
-        if Assigned(bmp) then bmp.Free;
-      SetLength(FBitmaps, 0);
-    end;
-    SetLength(FBitmaps, Length(FTokens));
+    SetLength(FAssets, Length(tokens));
+    for var idx := 0 to Length(tokens) - 1 do
+      FAssets[idx] := asset.Create(tokens[idx]);
 
     Enumerate(
       // foreach
       procedure(idx: Integer; next: TProc)
       begin
-        if FTokens[idx].LogoURI.IsEmpty then
+        if Assigned(frmProgress) and frmProgress.Cancelled then
+        begin
+          if frmProgress.Visible then frmProgress.Close;
+          EXIT;
+        end;
+        if FAssets[idx].Token.LogoURI.IsEmpty then
         begin
           next;
           EXIT;
         end;
-        web3.http.get(FTokens[idx].LogoURI.Replace('ipfs://', IPFS_GATEWAY), procedure(image: IHttpResponse; err: IError)
+        web3.http.get(FAssets[idx].Token.LogoURI.Replace('ipfs://', IPFS_GATEWAY), procedure(img: IHttpResponse; err: IError)
         begin
           if Assigned(err) then
           begin
             next;
             EXIT;
           end;
-          FBitmaps[idx] := TBitmap.Create;
           try
-            FBitmaps[idx].LoadFromStream(image.ContentStream);
+            FAssets[idx].Bitmap.LoadFromStream(img.ContentStream);
           except end;
           Synchronize(procedure
           begin
@@ -219,12 +250,16 @@ begin
       // done
       procedure
       begin
+        if Assigned(frmProgress) and frmProgress.Visible then frmProgress.Close;
       end
     );
 
-    Grid.RowCount := Length(FTokens);
+    Grid.RowCount := Length(FAssets);
     Self.Invalidate;
   end);
+
+  if not Assigned(frmProgress) then frmProgress := TfrmProgress.Create(Self);
+  frmProgress.ShowModal;
 end;
 
 end.
