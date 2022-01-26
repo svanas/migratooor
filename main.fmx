@@ -30,6 +30,7 @@ object frmMain: TfrmMain
   end
   object cboChain: TComboBox
     Anchors = [akTop, akRight]
+    DropDownCount = 10
     Position.X = 376.000000000000000000
     Position.Y = 8.000000000000000000
     TabOrder = 2

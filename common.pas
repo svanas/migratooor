@@ -7,7 +7,17 @@ uses
   web3;
 
 const
-  CHAINS: array[0..4] of TChain = (Ethereum, BSC, Polygon, Optimism, Arbitrum);
+  CHAINS: array[0..9] of TChain = (
+    Ethereum,
+    Ropsten,
+    Rinkeby,
+    Kovan,
+    Goerli,
+    BSC,
+    Polygon,
+    Optimism,
+    Arbitrum,
+    Gnosis);
 
 const
   INFURA_PROJECT_ID = '9aa3d95b3bc440fa88ea12eaa4456161';
