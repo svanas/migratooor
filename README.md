@@ -28,6 +28,18 @@ At the time of this writing, migratooor supports the following [EVM-compatible](
 * [Arbitrum](https://arbitrum.io)
 * [Gnosis](https://www.xdaichain.com)
 
+## How can I test this app?
+
+1. Switch your MetaMask to the [Rinkeby](https://rinkeby.etherscan.io) test network
+2. Navigate to https://rinkebyfaucet.com
+3. Copy your wallet address from MetaMask, press the `Send Me ETH` button
+4. Wait for your transaction to get mined. Your wallet will get credited with 0.1 ETH
+5. Navigate to https://app.compound.finance 
+6. Click an `DAI`, then withdraw, and there will be a faucet button
+7. Wait for your transaction to get mined. Your wallet will get credited with 100 DAI
+8. Repeat step 6 and 7 for `USDC` and `USDT`
+9. Launch migratooor, paste your wallet address from MetaMask, select the Rinkeby network
+
 ## Is this app secure?
 
 Maybe. No independent audit has been or will be commissioned. You are encouraged to read the code and decide for yourself whether it is secure.
