@@ -28,6 +28,10 @@ At the time of this writing, migratooor supports the following [EVM-compatible](
 * [Arbitrum](https://arbitrum.io)
 * [Gnosis](https://www.xdaichain.com)
 
+## Is this app secure?
+
+Maybe. No independent audit has been or will be commissioned. You are encouraged to read the code and decide for yourself whether it is secure.
+
 ## How can I test this app?
 
 1. Switch your MetaMask to the [Rinkeby](https://rinkeby.etherscan.io) test network
@@ -39,10 +43,6 @@ At the time of this writing, migratooor supports the following [EVM-compatible](
 7. Wait for your transaction to get mined. Your wallet will get credited with 100 DAI
 8. Repeat step 6 and 7 for `USDC` and `USDT`
 9. Launch migratooor, paste your wallet address from MetaMask, select the Rinkeby network
-
-## Is this app secure?
-
-Maybe. No independent audit has been or will be commissioned. You are encouraged to read the code and decide for yourself whether it is secure.
 
 ## Disclaimer
 
