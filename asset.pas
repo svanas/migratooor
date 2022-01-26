@@ -10,7 +10,9 @@ uses
   // Velthuis' BigNumbers
   Velthuis.BigIntegers,
   // web3
-  web3.eth.tokenlists;
+  web3,
+  web3.eth.tokenlists,
+  web3.eth.types;
 
 type
   IAsset = interface
@@ -19,11 +21,13 @@ type
     function Bitmap: TBitmap;
     function Checked: Boolean;
     function Check(Value: Boolean): IAsset;
+    procedure Transfer(client: IWeb3; from: TPrivateKey; &to: TAddress; callback: TAsyncTxHash);
   end;
 
   TAssets = TArray<IAsset>;
 
   TAssetsHelper = record helper for TAssets
+    function Checked: Integer;
     procedure Enumerate(foreach: TProc<Integer, TProc>; done: TProc);
   end;
 
@@ -33,7 +37,9 @@ implementation
 
 uses
   // Delphi
-  System.Math;
+  System.Math,
+  // web3
+  web3.eth.erc20;
 
 {----------------------------------- TAsset -----------------------------------}
 
@@ -50,6 +56,7 @@ type
     function Bitmap: TBitmap;
     function Checked: Boolean;
     function Check(Value: Boolean): IAsset;
+    procedure Transfer(client: IWeb3; from: TPrivateKey; &to: TAddress; callback: TAsyncTxHash);
     constructor Create(const aToken: IToken; aBalance: BigInteger);
     destructor Destroy; override;
   end;
@@ -76,9 +83,9 @@ end;
 function TAsset.Balance: Double;
 begin
   if Self.Token.Decimals = 0 then
-    Result := Self.FBalance.AsDouble
+    Result := FBalance.AsDouble
   else
-    Result := Self.FBalance.AsDouble / Power(10, Self.Token.Decimals);
+    Result := FBalance.AsDouble / Power(10, Self.Token.Decimals);
 end;
 
 function TAsset.Bitmap: TBitmap;
@@ -99,7 +106,24 @@ begin
   Result := Self;
 end;
 
+procedure TAsset.Transfer(client: IWeb3; from: TPrivateKey; &to: TAddress; callback: TAsyncTxHash);
+begin
+  var erc20 := TERC20.Create(client, Self.Token.Address);
+  try
+    erc20.Transfer(from, &to, FBalance, callback);
+  finally
+    erc20.Free;
+  end;
+end;
+
 {---------------------------------- TAssets -----------------------------------}
+
+function TAssetsHelper.Checked: Integer;
+begin
+  Result := 0;
+  for var asset in Self do
+    if asset.Checked then Inc(Result);
+end;
 
 procedure TAssetsHelper.Enumerate(foreach: TProc<Integer, TProc>; done: TProc);
 begin

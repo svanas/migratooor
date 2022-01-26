@@ -56,9 +56,7 @@ procedure ShowError(const msg: string);
 begin
   TThread.Synchronize(nil, procedure
   begin
-{$WARN SYMBOL_DEPRECATED OFF}
     MessageDlg(msg, TMsgDlgType.mtError, [TMsgDlgBtn.mbOK], 0);
-{$WARN SYMBOL_DEPRECATED DEFAULT}
   end);
 end;
 
@@ -70,7 +68,6 @@ begin
   var
     txError: ITxError;
   begin
-{$WARN SYMBOL_DEPRECATED OFF}
     if Supports(err, ITxError, txError) then
     begin
       if MessageDlg(
@@ -84,7 +81,6 @@ begin
       EXIT;
     end;
     MessageDlg(err.Message, TMsgDlgType.mtError, [TMsgDlgBtn.mbOK], 0);
-{$WARN SYMBOL_DEPRECATED DEFAULT}
   end);
 end;
 
@@ -108,14 +104,13 @@ resourcestring
   RS_PRIVATE_KEY_IS_INVALID = 'Private key is invalid';
 begin
   Result := '';
-  if &public.IsZero then
+
+  var &private: TPrivateKey;
+  TThread.Synchronize(nil, procedure
   begin
-    Result := '0000000000000000000000000000000000000000000000000000000000000000';
-    EXIT;
-  end;
-{$WARN SYMBOL_DEPRECATED OFF}
-  var &private := TPrivateKey(Trim(InputBox(string(&public), 'Please paste your private key', '')));
-{$WARN SYMBOL_DEPRECATED DEFAULT}
+    &private := TPrivateKey(Trim(InputBox(string(&public), 'Please paste your private key', '')));
+  end);
+
   if &private = '' then
     EXIT;
   if (
@@ -126,6 +121,7 @@ begin
     common.ShowError(RS_PRIVATE_KEY_IS_INVALID);
     EXIT;
   end;
+
   &private.Address(procedure(addr: TAddress; err: IError)
   begin
     if Assigned(err) then
@@ -139,6 +135,7 @@ begin
       &private := '';
     end;
   end);
+
   Result := &private;
 end;
 

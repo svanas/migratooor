@@ -5,6 +5,7 @@ interface
 uses
   // Delphi
   System.Classes,
+  System.UITypes,
   // FireMonkey
   FMX.Controls,
   FMX.Controls.Presentation,
@@ -20,19 +21,16 @@ type
     procedure btnCancelClick(Sender: TObject);
   private
     FCancelled: Boolean;
-    FCount: Integer;
-    procedure SetStep(Value: Integer);
   protected
     procedure DoShow; override;
     procedure DoHide; override;
   public
+    function Prompt(const msg: string): TModalResult;
+    procedure Step(const msg: string; idx, cnt: Integer);
     property Cancelled: Boolean read FCancelled;
-    property Step: Integer write SetStep;
-    property Count: Integer write FCount;
   end;
 
-var
-  frmProgress: TfrmProgress;
+function Get(aOwner: TForm): TfrmProgress;
 
 implementation
 
@@ -42,19 +40,23 @@ uses
   // Delphi
   System.SysUtils;
 
+var
+  frmProgress: TfrmProgress = nil;
+
+function Get(aOwner: TForm): TfrmProgress;
+begin
+  if not Assigned(frmProgress) then
+    frmProgress := TfrmProgress.Create(aOwner);
+  Result := frmProgress;
+end;
+
 procedure TfrmProgress.btnCancelClick(Sender: TObject);
 begin
   FCancelled := True;
 end;
 
-procedure TfrmProgress.SetStep(Value: Integer);
-begin
-  lblMessage.Text := Format('Scanning for %d/%d tokens in your wallet. Please wait...', [Value, FCount]);
-end;
-
 procedure TfrmProgress.DoShow;
 begin
-  lblMessage.Text := 'Scanning for tokens in your wallet. Please wait...';
   indicator.Enabled := True;
   inherited DoShow;
 end;
@@ -64,6 +66,17 @@ begin
   FCancelled := False;
   inherited DoHide;
   indicator.Enabled := False;
+end;
+
+function TfrmProgress.Prompt(const msg: string): TModalResult;
+begin
+  lblMessage.Text := msg;
+  Result := Self.ShowModal;
+end;
+
+procedure TfrmProgress.Step(const msg: string; idx, cnt: Integer);
+begin
+  lblMessage.Text := Format(msg, [idx, cnt]);
 end;
 
 end.

@@ -2,28 +2,29 @@ object frmMain: TfrmMain
   Left = 0
   Top = 0
   Caption = 'Migratooor'
-  ClientHeight = 511
+  ClientHeight = 541
   ClientWidth = 572
   FormFactor.Width = 320
   FormFactor.Height = 480
   FormFactor.Devices = [Desktop]
   DesignerMasterStyle = 0
-  object lblAddress: TLabel
+  object lblOwner: TLabel
     Position.X = 8.000000000000000000
     Position.Y = 10.000000000000000000
-    Size.Width = 74.000000000000000000
+    Size.Width = 88.000000000000000000
     Size.Height = 17.000000000000000000
     Size.PlatformDefault = False
-    Text = 'My address:'
+    TextSettings.HorzAlign = Trailing
+    Text = 'From address:'
     TabOrder = 0
   end
-  object edtAddress: TEdit
+  object edtOwner: TEdit
     Touch.InteractiveGestures = [LongTap, DoubleTap]
     Anchors = [akLeft, akTop, akRight]
     TabOrder = 1
-    Position.X = 88.000000000000000000
+    Position.X = 104.000000000000000000
     Position.Y = 8.000000000000000000
-    Size.Width = 280.000000000000000000
+    Size.Width = 264.000000000000000000
     Size.Height = 22.000000000000000000
     Size.PlatformDefault = False
     TextPrompt = '0x0'
@@ -94,5 +95,47 @@ object frmMain: TfrmMain
       Text = 'Select all tokens'
       OnChange = chkSelectAllChange
     end
+  end
+  object lblRecipient: TLabel
+    Anchors = [akLeft, akBottom]
+    Position.X = 8.000000000000000000
+    Position.Y = 513.000000000000000000
+    Size.Width = 88.000000000000000000
+    Size.Height = 17.000000000000000000
+    Size.PlatformDefault = False
+    TextSettings.HorzAlign = Trailing
+    Text = 'To address:'
+    TabOrder = 6
+  end
+  object edtRecipient: TEdit
+    Touch.InteractiveGestures = [LongTap, DoubleTap]
+    Anchors = [akLeft, akRight, akBottom]
+    TabOrder = 7
+    Position.X = 104.000000000000000000
+    Position.Y = 511.000000000000000000
+    Size.Width = 331.000000000000000000
+    Size.Height = 22.000000000000000000
+    Size.PlatformDefault = False
+    TextPrompt = '0x0'
+  end
+  object btnMigrate: TButton
+    Anchors = [akRight, akBottom]
+    Enabled = False
+    Position.X = 484.000000000000000000
+    Position.Y = 511.000000000000000000
+    TabOrder = 9
+    Text = 'Migrate'
+    OnClick = btnMigrateClick
+  end
+  object btnNew: TButton
+    Anchors = [akRight, akBottom]
+    Position.X = 434.000000000000000000
+    Position.Y = 511.000000000000000000
+    Size.Width = 42.000000000000000000
+    Size.Height = 22.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 8
+    Text = 'New'
+    OnClick = btnNewClick
   end
 end
