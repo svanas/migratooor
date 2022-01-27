@@ -7,7 +7,7 @@ uses
   web3;
 
 const
-  CHAINS: array[0..9] of TChain = (
+  CHAINS: array[0..10] of TChain = (
     Ethereum,
     Ropsten,
     Rinkeby,
@@ -17,6 +17,7 @@ const
     Polygon,
     Optimism,
     Arbitrum,
+    Fantom,
     Gnosis);
 
 const
