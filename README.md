@@ -26,6 +26,7 @@ At the time of this writing, migratooor supports the following [EVM-compatible](
 * [Polygon](https://polygon.technology)
 * [Optimism](https://optimism.io)
 * [Arbitrum](https://arbitrum.io)
+* [Fantom](https://fantom.foundation)
 * [Gnosis](https://www.xdaichain.com)
 
 ## Is this app secure?
