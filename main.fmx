@@ -113,29 +113,29 @@ object frmMain: TfrmMain
     TabOrder = 7
     Position.X = 104.000000000000000000
     Position.Y = 511.000000000000000000
-    Size.Width = 331.000000000000000000
+    Size.Width = 372.000000000000000000
     Size.Height = 22.000000000000000000
     Size.PlatformDefault = False
     TextPrompt = '0x0'
+    object btnNew: TEditButton
+      CanFocus = False
+      Cursor = crArrow
+      Hint = 'Generate new wallet'
+      Size.Width = 32.000000000000000000
+      Size.Height = 18.000000000000000000
+      Size.PlatformDefault = False
+      TabOrder = 0
+      Text = 'New'
+      OnClick = btnNewClick
+    end
   end
   object btnMigrate: TButton
     Anchors = [akRight, akBottom]
     Enabled = False
     Position.X = 484.000000000000000000
     Position.Y = 511.000000000000000000
-    TabOrder = 9
+    TabOrder = 8
     Text = 'Migrate'
     OnClick = btnMigrateClick
-  end
-  object btnNew: TButton
-    Anchors = [akRight, akBottom]
-    Position.X = 434.000000000000000000
-    Position.Y = 511.000000000000000000
-    Size.Width = 42.000000000000000000
-    Size.Height = 22.000000000000000000
-    Size.PlatformDefault = False
-    TabOrder = 8
-    Text = 'New'
-    OnClick = btnNewClick
   end
 end

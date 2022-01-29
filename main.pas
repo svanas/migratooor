@@ -39,8 +39,8 @@ type
     chkSelectAll: TCheckBox;
     edtRecipient: TEdit;
     lblRecipient: TLabel;
-    btnNew: TButton;
     btnMigrate: TButton;
+    btnNew: TEditButton;
     procedure btnMigrateClick(Sender: TObject);
     procedure btnNewClick(Sender: TObject);
     procedure btnScanClick(Sender: TObject);
@@ -56,6 +56,7 @@ type
     procedure Clear;
     function Client: IWeb3;
     class function Ethereum: IWeb3;
+    procedure Generate;
     procedure InitUI;
     procedure Migrate;
     procedure Owner(callback: TAsyncAddress);
@@ -100,29 +101,7 @@ end;
 
 procedure TfrmMain.btnNewClick(Sender: TObject);
 begin
-  var &private := TPrivateKey.Generate;
-  &private.Address(procedure(&public: TAddress; err: IError)
-  begin
-    if Assigned(err) then
-    begin
-      common.ShowError(err, Chain);
-      EXIT;
-    end;
-    var svc: IFMXClipboardService;
-    if TPlatformServices.Current.SupportsPlatformService(IFMXClipboardService, svc) then
-    begin
-      svc.SetClipboard(string(&private));
-      Self.Synchronize(procedure
-      begin
-        edtRecipient.Text := string(&public);
-        MessageDlg(
-          'A new wallet has been generated for you.' + #10#10 +
-          'Your new private key has been copied to the clipboard.' + #10#10 +
-          'Please paste your private key in a safe place (for example: your password manager), then clear the clipboard.',
-          TMsgDlgType.mtInformation, [TMsgDlgBtn.mbOK], 0);
-      end);
-    end;
-  end);
+  Self.Generate;
 end;
 
 procedure TfrmMain.btnScanClick(Sender: TObject);
@@ -208,6 +187,33 @@ end;
 class function TfrmMain.Ethereum: IWeb3;
 begin
   Result := TWeb3.Create(web3.Ethereum, web3.eth.infura.endpoint(web3.Ethereum, INFURA_PROJECT_ID));
+end;
+
+procedure TfrmMain.Generate;
+begin
+  var &private := TPrivateKey.Generate;
+  &private.Address(procedure(&public: TAddress; err: IError)
+  begin
+    if Assigned(err) then
+    begin
+      common.ShowError(err, Chain);
+      EXIT;
+    end;
+    var svc: IFMXClipboardService;
+    if TPlatformServices.Current.SupportsPlatformService(IFMXClipboardService, svc) then
+    begin
+      svc.SetClipboard(string(&private));
+      Self.Synchronize(procedure
+      begin
+        edtRecipient.Text := string(&public);
+        MessageDlg(
+          'A new wallet has been generated for you.' + #10#10 +
+          'Your private key has been copied to the clipboard.' + #10#10 +
+          'Please paste your private key in a safe place (for example: your password manager), then clear the clipboard.',
+          TMsgDlgType.mtInformation, [TMsgDlgBtn.mbOK], 0);
+      end);
+    end;
+  end);
 end;
 
 procedure TfrmMain.InitUI;
