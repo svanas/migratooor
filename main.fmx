@@ -121,7 +121,7 @@ object frmMain: TfrmMain
       CanFocus = False
       Cursor = crArrow
       Hint = 'Generate new wallet'
-      Size.Width = 32.000000000000000000
+      Size.Width = 48.000000000000000000
       Size.Height = 18.000000000000000000
       Size.PlatformDefault = False
       TabOrder = 0

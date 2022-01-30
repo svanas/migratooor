@@ -102,7 +102,7 @@ end;
 
 function GetPrivateKey(&public: TAddress): TPrivateKey;
 resourcestring
-  RS_PRIVATE_KEY_IS_INVALID = 'Private key is invalid';
+  RS_PRIVATE_KEY_IS_INVALID = 'Private key is invalid.';
 begin
   Result := '';
 
