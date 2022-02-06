@@ -4,9 +4,11 @@ Migratooor transfers all your tokens from one wallet to another.
 
 ## Why would I want to do that?
 
-if your wallet...
-1. is compromised, or
-2. is linked to your identity
+If...
+
+1. your private key is compromised, or
+2. your wallet is linked to your identity, or
+3. you want to revoke every token approval
 
 ...then you will want to move all your tokens to a new, fresh wallet.
 

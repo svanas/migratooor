@@ -41,28 +41,35 @@ type
     lblRecipient: TLabel;
     btnMigrate: TButton;
     btnNew: TEditButton;
+    chkUniswapPairs: TCheckBox;
+    procedure cboChainChange(Sender: TObject);
     procedure btnMigrateClick(Sender: TObject);
     procedure btnNewClick(Sender: TObject);
     procedure btnScanClick(Sender: TObject);
     procedure chkSelectAllChange(Sender: TObject);
+    procedure chkUniswapPairsChange(Sender: TObject);
     procedure GridGetValue(Sender: TObject; const ACol, ARow: Integer;
       var Value: TValue);
     procedure GridSetValue(Sender: TObject; const ACol, ARow: Integer;
       const Value: TValue);
   private
     FAssets: TAssets;
+    FLocked: Integer;
     function Cancelled: Boolean;
     function Chain: TChain;
     procedure Clear;
     function Client: IWeb3;
     class function Ethereum: IWeb3;
     procedure Generate;
-    procedure InitUI;
+    procedure Init;
+    procedure Lock;
+    function Locked: Boolean;
     procedure Migrate;
     procedure Owner(callback: TAsyncAddress);
     procedure Recipient(callback: TAsyncAddress);
+    procedure Scan(bUniswap: Boolean);
     class procedure Synchronize(P: TThreadProcedure);
-    procedure UpdateUI;
+    procedure Unlock;
   public
     constructor Create(aOwner: TComponent); override;
   end;
@@ -94,6 +101,17 @@ uses
 
 //------------------------------- event handlers -------------------------------
 
+procedure TfrmMain.cboChainChange(Sender: TObject);
+begin
+  Self.Lock;
+  try
+    chkUniswapPairs.IsChecked := Chain = web3.Ethereum;
+    chkUniswapPairs.Enabled   := Chain = web3.Ethereum;
+  finally
+    Self.Unlock;
+  end;
+end;
+
 procedure TfrmMain.btnMigrateClick(Sender: TObject);
 begin
   Self.Migrate;
@@ -106,7 +124,7 @@ end;
 
 procedure TfrmMain.btnScanClick(Sender: TObject);
 begin
-  UpdateUI;
+  Self.Scan((Chain = web3.Ethereum) and chkUniswapPairs.IsChecked);
 end;
 
 procedure TfrmMain.chkSelectAllChange(Sender: TObject);
@@ -116,6 +134,12 @@ begin
     FAssets[idx].Check(chkSelectAll.IsChecked);
     colCheck.UpdateCell(idx);
   end;
+end;
+
+procedure TfrmMain.chkUniswapPairsChange(Sender: TObject);
+begin
+  if not Self.Locked then
+    Self.Scan((Chain = web3.Ethereum) and chkUniswapPairs.IsChecked);
 end;
 
 procedure TfrmMain.GridGetValue(Sender: TObject; const ACol, ARow: Integer;
@@ -140,7 +164,7 @@ end;
 constructor TfrmMain.Create(aOwner: TComponent);
 begin
   inherited Create(aOwner);
-  InitUI;
+  Init;
 end;
 
 //---------------------------------- private -----------------------------------
@@ -216,12 +240,22 @@ begin
   end);
 end;
 
-procedure TfrmMain.InitUI;
+procedure TfrmMain.Init;
 begin
   for var chain in CHAINS do
     cboChain.Items.AddObject(chain.Name, TObject(chain));
   cboChain.ItemIndex := 0;
   edtOwner.SetFocus;
+end;
+
+procedure TfrmMain.Lock;
+begin
+  Inc(FLocked);
+end;
+
+function TfrmMain.Locked: Boolean;
+begin
+  Result := FLocked > 0;
 end;
 
 procedure TfrmMain.Migrate;
@@ -335,20 +369,92 @@ begin
   end);
 end;
 
-class procedure TfrmMain.Synchronize(P: TThreadProcedure);
-begin
-  if TThread.CurrentThread.ThreadID = MainThreadId then
-    P
-  else
-    TThread.Synchronize(nil, procedure
-    begin
-      P
-    end);
-end;
-
-procedure TfrmMain.UpdateUI;
+// includes 30k Uniswap v2 LP tokens if bUniswap is true, otherwise no LP tokens
+procedure TfrmMain.Scan(bUniswap: Boolean);
 begin
   Self.Clear;
+
+  var enumerate := procedure(owner: TAddress; tokens: TTokens)
+  begin
+    // step #4: get your balance for each token
+    tokens.Enumerate(
+      // foreach
+      procedure(idx: Integer; next: TProc)
+      begin
+        Self.Synchronize(procedure
+        begin
+          progress.Get(Self).Step('Scanning for %d/%d tokens in your wallet. Please wait...', idx, Length(tokens));
+        end);
+
+        tokens[idx].Balance(Client, owner, procedure(balance: BigInteger; err: IError)
+        begin
+          if Self.Cancelled then EXIT;
+
+          if Assigned(err) then
+          begin
+            next;
+            EXIT;
+          end;
+
+          if balance.IsPositive then
+          begin
+            FAssets := FAssets + [asset.Create(tokens[idx], balance)];
+            Self.Synchronize(procedure
+            begin
+              Grid.RowCount := Length(FAssets);
+              btnMigrate.Enabled := True;
+              Self.Invalidate;
+            end);
+          end;
+
+          next;
+        end);
+      end,
+      // done
+      procedure
+      begin
+        // step #5: download and display the token icon
+        FAssets.Enumerate(
+          // foreach
+          procedure(idx: Integer; next: TProc)
+          begin
+            if FAssets[idx].Token.LogoURI.IsEmpty then
+            begin
+              next;
+              EXIT;
+            end;
+
+            web3.http.get(FAssets[idx].Token.LogoURI.Replace('ipfs://', IPFS_GATEWAY), procedure(img: IHttpResponse; err: IError)
+            begin
+              if Self.Cancelled then EXIT;
+
+              if Assigned(err) then
+              begin
+                next;
+                EXIT;
+              end;
+
+              try
+                FAssets[idx].Bitmap.LoadFromStream(img.ContentStream);
+              except end;
+
+              Synchronize(procedure
+              begin
+                colImage.UpdateCell(idx);
+              end);
+
+              next;
+            end);
+          end,
+          // done
+          procedure
+          begin
+            progress.Get(Self).Close;
+          end
+        );
+      end
+    );
+  end;
 
   // step #1: resolve the owner ENS name
   Self.Owner(procedure(owner: TAddress; err: IError)
@@ -372,88 +478,45 @@ begin
         EXIT;
       end;
 
-      // step #3: get your balance for each token
-      tokens.Enumerate(
-        // foreach
-        procedure(idx: Integer; next: TProc)
+      // step #3: include 30k Uniswap v2 LP tokens (optional)
+      if bUniswap then
+      begin
+        web3.eth.tokenlists.tokens('https://raw.githubusercontent.com/jab416171/uniswap-pairtokens/master/uniswap_pair_tokens.json', procedure(uniswap: TTokens; err: IError)
         begin
-          Self.Synchronize(procedure
+          if Self.Cancelled then EXIT;
+
+          if Assigned(err) then
           begin
-            progress.Get(Self).Step('Scanning for %d/%d tokens in your wallet. Please wait...', idx, Length(tokens));
-          end);
+            common.ShowError(err, Chain);
+            EXIT;
+          end;
 
-          tokens[idx].Balance(Client, owner, procedure(balance: BigInteger; err: IError)
-          begin
-            if Self.Cancelled then EXIT;
+          enumerate(owner, tokens + uniswap);
+        end);
+        EXIT;
+      end;
 
-            if Assigned(err) then
-            begin
-              next;
-              EXIT;
-            end;
-
-            if balance.IsPositive then
-            begin
-              FAssets := FAssets + [asset.Create(tokens[idx], balance)];
-              Self.Synchronize(procedure
-              begin
-                Grid.RowCount := Length(FAssets);
-                btnMigrate.Enabled := True;
-                Self.Invalidate;
-              end);
-            end;
-
-            next;
-          end);
-        end,
-        // done
-        procedure
-        begin
-          // step #4: download and display the token icon
-          FAssets.Enumerate(
-            // foreach
-            procedure(idx: Integer; next: TProc)
-            begin
-              if FAssets[idx].Token.LogoURI.IsEmpty then
-              begin
-                next;
-                EXIT;
-              end;
-
-              web3.http.get(FAssets[idx].Token.LogoURI.Replace('ipfs://', IPFS_GATEWAY), procedure(img: IHttpResponse; err: IError)
-              begin
-                if Self.Cancelled then EXIT;
-
-                if Assigned(err) then
-                begin
-                  next;
-                  EXIT;
-                end;
-
-                try
-                  FAssets[idx].Bitmap.LoadFromStream(img.ContentStream);
-                except end;
-
-                Synchronize(procedure
-                begin
-                  colImage.UpdateCell(idx);
-                end);
-
-                next;
-              end);
-            end,
-            // done
-            procedure
-            begin
-              progress.Get(Self).Close;
-            end
-          );
-        end
-      );
+      enumerate(owner, tokens);
     end);
   end);
 
   progress.Get(Self).Prompt('Scanning for tokens in your wallet. Please wait...');
+end;
+
+class procedure TfrmMain.Synchronize(P: TThreadProcedure);
+begin
+  if TThread.CurrentThread.ThreadID = MainThreadId then
+    P
+  else
+    TThread.Synchronize(nil, procedure
+    begin
+      P
+    end);
+end;
+
+procedure TfrmMain.Unlock;
+begin
+  if FLocked > 0 then Dec(FLocked);
 end;
 
 end.

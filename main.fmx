@@ -2,7 +2,7 @@ object frmMain: TfrmMain
   Left = 0
   Top = 0
   Caption = 'Migratooor'
-  ClientHeight = 541
+  ClientHeight = 571
   ClientWidth = 572
   FormFactor.Width = 320
   FormFactor.Height = 480
@@ -35,6 +35,7 @@ object frmMain: TfrmMain
     Position.X = 376.000000000000000000
     Position.Y = 8.000000000000000000
     TabOrder = 2
+    OnChange = cboChainChange
   end
   object btnScan: TButton
     Anchors = [akTop, akRight]
@@ -49,7 +50,7 @@ object frmMain: TfrmMain
     CanFocus = True
     ClipChildren = True
     Position.X = 8.000000000000000000
-    Position.Y = 70.000000000000000000
+    Position.Y = 100.000000000000000000
     Size.Width = 556.000000000000000000
     Size.Height = 433.000000000000000000
     Size.PlatformDefault = False
@@ -84,22 +85,38 @@ object frmMain: TfrmMain
     Position.X = 8.000000000000000000
     Position.Y = 38.000000000000000000
     Size.Width = 556.000000000000000000
-    Size.Height = 32.000000000000000000
+    Size.Height = 62.000000000000000000
     Size.PlatformDefault = False
     TabOrder = 4
     object chkSelectAll: TCheckBox
+      Anchors = [akLeft, akTop, akRight]
       IsChecked = True
       Position.X = 9.000000000000000000
-      Position.Y = 7.000000000000000000
-      TabOrder = 0
+      Position.Y = 35.000000000000000000
+      Size.Width = 539.000000000000000000
+      Size.Height = 19.000000000000000000
+      Size.PlatformDefault = False
+      TabOrder = 1
       Text = 'Select all tokens'
       OnChange = chkSelectAllChange
+    end
+    object chkUniswapPairs: TCheckBox
+      Anchors = [akLeft, akTop, akRight]
+      IsChecked = True
+      Position.X = 9.000000000000000000
+      Position.Y = 8.000000000000000000
+      Size.Width = 539.000000000000000000
+      Size.Height = 19.000000000000000000
+      Size.PlatformDefault = False
+      TabOrder = 0
+      Text = 'Include 30k Uniswap v2 LP tokens (slower)'
+      OnChange = chkUniswapPairsChange
     end
   end
   object lblRecipient: TLabel
     Anchors = [akLeft, akBottom]
     Position.X = 8.000000000000000000
-    Position.Y = 513.000000000000000000
+    Position.Y = 543.000000000000000000
     Size.Width = 88.000000000000000000
     Size.Height = 17.000000000000000000
     Size.PlatformDefault = False
@@ -112,7 +129,7 @@ object frmMain: TfrmMain
     Anchors = [akLeft, akRight, akBottom]
     TabOrder = 7
     Position.X = 104.000000000000000000
-    Position.Y = 511.000000000000000000
+    Position.Y = 541.000000000000000000
     Size.Width = 372.000000000000000000
     Size.Height = 22.000000000000000000
     Size.PlatformDefault = False
@@ -133,7 +150,7 @@ object frmMain: TfrmMain
     Anchors = [akRight, akBottom]
     Enabled = False
     Position.X = 484.000000000000000000
-    Position.Y = 511.000000000000000000
+    Position.Y = 541.000000000000000000
     TabOrder = 8
     Text = 'Migrate'
     OnClick = btnMigrateClick
