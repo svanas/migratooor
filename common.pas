@@ -20,10 +20,6 @@ const
     Fantom,
     Gnosis);
 
-const
-  INFURA_PROJECT_ID = '9aa3d95b3bc440fa88ea12eaa4456161';
-  IPFS_GATEWAY      = 'https://ipfs.io/ipfs/';
-
 procedure ShowError(const msg: string); overload;
 procedure ShowError(const err: IError; chain: TChain); overload;
 

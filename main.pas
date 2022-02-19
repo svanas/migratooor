@@ -99,6 +99,8 @@ uses
   common,
   progress;
 
+{$I migratooor.api.key}
+
 //------------------------------- event handlers -------------------------------
 
 procedure TfrmMain.cboChainChange(Sender: TObject);
@@ -424,7 +426,7 @@ begin
               EXIT;
             end;
 
-            web3.http.get(FAssets[idx].Token.LogoURI.Replace('ipfs://', IPFS_GATEWAY), procedure(img: IHttpResponse; err: IError)
+            web3.http.get(FAssets[idx].Token.LogoURI.Replace('ipfs://', 'https://ipfs.io/ipfs/'), procedure(img: IHttpResponse; err: IError)
             begin
               if Self.Cancelled then EXIT;
 
