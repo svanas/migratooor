@@ -31,6 +31,13 @@ At the time of this writing, migratooor supports the following [EVM-compatible](
 * [Fantom](https://fantom.foundation)
 * [Gnosis](https://www.xdaichain.com)
 
+## What tokens does this app scan for?
+
+On the Ethereum network, migratooor scans for...
+* more than 5000 erc-20 tokens, and
+* every (erc-721 and erc-1155) NFT on [OpenSea](https://opensea.io), and
+* more than 30,000 Uniswap v2 LP tokens.
+
 ## Is this app secure?
 
 Maybe. No independent audit has been or will be commissioned. You are encouraged to read the code and decide for yourself whether it is secure.
