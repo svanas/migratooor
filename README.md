@@ -59,6 +59,14 @@ Maybe. No independent audit has been or will be commissioned. You are encouraged
 8. Repeat step 6 and 7 for `USDC` and `USDT`
 9. Launch migratooor, paste your wallet address from MetaMask, select the Rinkeby network
 
+## How can I compile this app?
+
+1. Download and install [Delphi](https://www.embarcadero.com/products/delphi)
+2. Clone [Delphereum](https://github.com/svanas/delphereum) and the [dependencies](https://github.com/svanas/delphereum#dependencies)
+3. The compiler will stop at [migratooor.api.key](https://github.com/svanas/migratooor/blob/main/migratooor.api.key)
+4. Enter your [Infura](https://infura.io) API key and your [OpenSea](https://opensea.io) API key
+5. Should you decide to fork this repo, then do not commit your API keys. Your API keys are not to be shared.
+
 ## Disclaimer
 
 Migratooor is provided free of charge. There is no warranty. The authors do not assume any responsibility for bugs, vulnerabilities, or any other technical defects. Use at your own risk.
