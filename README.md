@@ -1,3 +1,8 @@
+[![GitHub release](https://img.shields.io/github/release/svanas/migratooor)](https://github.com/svanas/migratooor/releases/latest)
+[![GitHub license](https://img.shields.io/github/license/svanas/migratooor)](https://github.com/svanas/migratooor/blob/main/LICENSE)
+[![macOS](https://svgshare.com/i/ZjP.svg)](https://github.com/svanas/migratooor/releases/latest/download/macOS.zip)
+[![Windows](https://svgshare.com/i/ZhY.svg)](https://github.com/svanas/migratooor/releases/latest/download/Windows.zip)
+
 # Migratooor
 
 Migratooor transfers all your tokens from one wallet to another.
@@ -30,6 +35,13 @@ At the time of this writing, migratooor supports the following [EVM-compatible](
 * [Arbitrum](https://arbitrum.io)
 * [Fantom](https://fantom.foundation)
 * [Gnosis](https://www.xdaichain.com)
+
+## What tokens does this app scan for?
+
+On the Ethereum network, migratooor scans for...
+* more than 5000 [erc-20](https://ethereum.org/en/developers/docs/standards/tokens/erc-20) tokens, and
+* every ([erc-721](https://ethereum.org/en/developers/docs/standards/tokens/erc-721) and [erc-1155](https://ethereum.org/en/developers/docs/standards/tokens/erc-1155)) NFT on [OpenSea](https://opensea.io), and
+* more than 30,000 Uniswap v2 LP tokens.
 
 ## Is this app secure?
 
