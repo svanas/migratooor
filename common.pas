@@ -20,6 +20,8 @@ const
     Fantom,
     Gnosis);
 
+function Release: string;
+
 procedure ShowError(const msg: string); overload;
 procedure ShowError(const err: IError; chain: TChain); overload;
 
@@ -44,10 +46,44 @@ uses
 {$ENDIF POSIX}
   // FireMonkey
   FMX.Dialogs,
+  FMX.Platform,
   // web3
   web3.eth.tx,
   web3.eth.types,
   web3.utils;
+
+function Release: string;
+begin
+{$IFDEF MSWINDOWS}
+  var exe := ParamStr(0);
+  if exe.Length > 0 then
+  begin
+    var hnd: DWORD;
+    var len := GetFileVersionInfoSize(PChar(exe), hnd);
+    if len > 0 then
+    begin
+      var buf: TBytes;
+      SetLength(buf, len);
+      if GetFileVersionInfo(PChar(exe), hnd, len, buf) then
+      begin
+        var info: PVSFixedFileInfo;
+        if VerQueryValue(buf, '\', Pointer(info), len) then
+        begin
+          Result := Format('%d.%d.%d', [
+            LongRec(info.dwFileVersionMS).Hi, // major
+            LongRec(info.dwFileVersionMS).Lo, // minor
+            LongRec(info.dwFileVersionLS).Hi  // release
+          ]);
+          EXIT;
+        end;
+      end;
+    end;
+  end;
+{$ENDIF}
+  var svc: IFMXApplicationService;
+  if TPlatformServices.Current.SupportsPlatformService(IFMXApplicationService, svc) then
+    Result := svc.AppVersion;
+end;
 
 procedure ShowError(const msg: string);
 begin

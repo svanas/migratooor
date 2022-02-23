@@ -25,6 +25,13 @@ uses
   asset;
 
 type
+  TSetting = (
+    UniswapPairs, // scan for 30k Uniswap v2 LP tokens if included, otherwise no LP tokens
+    NFTs // scan for (erc-721 and erc-1155) NFTs using the OpenSea API, otherwise no NFTs.
+  );
+  TSettings = set of TSetting;
+
+type
   TfrmMain = class(TForm)
     lblOwner: TLabel;
     edtOwner: TEdit;
@@ -41,13 +48,15 @@ type
     lblRecipient: TLabel;
     btnMigrate: TButton;
     btnNew: TEditButton;
-    chkUniswapPairs: TCheckBox;
-    procedure cboChainChange(Sender: TObject);
+    chkScanForUniswapPairs: TCheckBox;
+    chkScanForNFTs: TCheckBox;
+    chkScanForERC20s: TCheckBox;
     procedure btnMigrateClick(Sender: TObject);
     procedure btnNewClick(Sender: TObject);
     procedure btnScanClick(Sender: TObject);
+    procedure cboChainChange(Sender: TObject);
+    procedure chkScanForChange(Sender: TObject);
     procedure chkSelectAllChange(Sender: TObject);
-    procedure chkUniswapPairsChange(Sender: TObject);
     procedure GridGetValue(Sender: TObject; const ACol, ARow: Integer;
       var Value: TValue);
     procedure GridSetValue(Sender: TObject; const ACol, ARow: Integer;
@@ -59,6 +68,7 @@ type
     function Chain: TChain;
     procedure Clear;
     function Client: IWeb3;
+    procedure Count(aSettings: TSettings; callback: TAsyncQuantity);
     class function Ethereum: IWeb3;
     procedure Generate;
     procedure Init;
@@ -67,9 +77,11 @@ type
     procedure Migrate;
     procedure Owner(callback: TAsyncAddress);
     procedure Recipient(callback: TAsyncAddress);
-    procedure Scan(bUniswap: Boolean);
+    procedure Scan(aSettings: TSettings);
+    function Settings: TSettings;
     class procedure Synchronize(P: TThreadProcedure);
     procedure Unlock;
+    procedure Update;
   public
     constructor Create(aOwner: TComponent); override;
   end;
@@ -93,6 +105,7 @@ uses
   // web3
   web3.eth,
   web3.eth.infura,
+  web3.eth.opensea,
   web3.eth.tokenlists,
   web3.http,
   // Project
@@ -101,18 +114,10 @@ uses
 
 {$I migratooor.api.key}
 
-//------------------------------- event handlers -------------------------------
+const
+  UNISWAP_PAIR_TOKENS = 'https://raw.githubusercontent.com/jab416171/uniswap-pairtokens/master/uniswap_pair_tokens.json';
 
-procedure TfrmMain.cboChainChange(Sender: TObject);
-begin
-  Self.Lock;
-  try
-    chkUniswapPairs.IsChecked := Chain = web3.Ethereum;
-    chkUniswapPairs.Enabled   := Chain = web3.Ethereum;
-  finally
-    Self.Unlock;
-  end;
-end;
+//------------------------------- event handlers -------------------------------
 
 procedure TfrmMain.btnMigrateClick(Sender: TObject);
 begin
@@ -126,22 +131,45 @@ end;
 
 procedure TfrmMain.btnScanClick(Sender: TObject);
 begin
-  Self.Scan((Chain = web3.Ethereum) and chkUniswapPairs.IsChecked);
+  Self.Scan(Self.Settings);
+end;
+
+procedure TfrmMain.cboChainChange(Sender: TObject);
+begin
+  Self.Lock;
+  try
+    chkScanForERC20s.Text := 'Scan for (calculating...) erc-20 tokens';
+    web3.eth.tokenlists.count(Chain, procedure(cnt: BigInteger; err: IError)
+    begin
+      Self.Synchronize(procedure
+      begin
+        chkScanForERC20s.Text := Format('Scan for %s known erc-20 tokens', [cnt.ToString]);
+      end);
+    end);
+
+    chkScanForNFTs.Enabled := Chain in [web3.Ethereum, web3.Rinkeby];
+    chkScanForNFTs.IsChecked := chkScanForNFTs.Enabled;
+
+    chkScanForUniswapPairs.Enabled := Chain = web3.Ethereum;
+    if not chkScanForUniswapPairs.Enabled then
+      chkScanForUniswapPairs.IsChecked := False;
+  finally
+    Self.Unlock;
+  end;
+end;
+
+procedure TfrmMain.chkScanForChange(Sender: TObject);
+begin
+  if not Self.Locked then Self.Scan(Self.Settings);
 end;
 
 procedure TfrmMain.chkSelectAllChange(Sender: TObject);
 begin
-  for var idx := 0 to Length(FAssets) - 1 do
+  for var idx := 0 to FAssets.Length - 1 do
   begin
     FAssets[idx].Check(chkSelectAll.IsChecked);
     colCheck.UpdateCell(idx);
   end;
-end;
-
-procedure TfrmMain.chkUniswapPairsChange(Sender: TObject);
-begin
-  if not Self.Locked then
-    Self.Scan((Chain = web3.Ethereum) and chkUniswapPairs.IsChecked);
 end;
 
 procedure TfrmMain.GridGetValue(Sender: TObject; const ACol, ARow: Integer;
@@ -150,7 +178,7 @@ begin
   case ACol of
     0: Value := FAssets[ARow].Checked;
     1: Value := FAssets[ARow].Bitmap;
-    2: Value := FAssets[ARow].Token.Name;
+    2: Value := FAssets[ARow].Name;
     3: Value := FAssets[ARow].Balance;
   end;
 end;
@@ -161,22 +189,13 @@ begin
   if ACol = 0 then FAssets[ARow].Check(Value.AsBoolean);
 end;
 
-//---------------------------------- public -----------------------------------
-
-constructor TfrmMain.Create(aOwner: TComponent);
-begin
-  inherited Create(aOwner);
-  Init;
-end;
-
 //---------------------------------- private -----------------------------------
 
 function TfrmMain.Cancelled: Boolean;
 begin
   var P := progress.Get(Self);
   Result := Assigned(P) and P.Cancelled;
-  if Result then
-    if P.Visible then P.Close;
+  if Result and P.Visible then P.Close;
 end;
 
 function TfrmMain.Chain: TChain;
@@ -188,6 +207,7 @@ procedure TfrmMain.Clear;
 begin
   FAssets := [];
   Grid.RowCount := 0;
+  chkSelectAll.Enabled := False;
   chkSelectAll.IsChecked := True;
   btnMigrate.Enabled := False;
   Self.Invalidate;
@@ -210,6 +230,26 @@ begin
   Result := aClient;
 end;
 
+procedure TfrmMain.Count(aSettings: TSettings; callback: TAsyncQuantity);
+begin
+  // step #1: count the tokens on this chain that Uniswap knows about
+  web3.eth.tokenlists.count(Chain, procedure(cnt1: BigInteger; err: IError)
+  begin
+    ( // step #2: count the Uniswap v2 LP tokens (optional)
+      procedure(return: TAsyncQuantity)
+      begin
+        if UniswapPairs in aSettings then
+          web3.eth.tokenlists.count(UNISWAP_PAIR_TOKENS, return)
+        else
+          return(0, nil);
+      end
+    )(procedure(cnt2: BigInteger; err: IError)
+      begin
+        callback(cnt1 + cnt2, err);
+      end);
+  end);
+end;
+
 class function TfrmMain.Ethereum: IWeb3;
 begin
   Result := TWeb3.Create(web3.Ethereum, web3.eth.infura.endpoint(web3.Ethereum, INFURA_PROJECT_ID));
@@ -225,27 +265,27 @@ begin
       common.ShowError(err, Chain);
       EXIT;
     end;
+
     var svc: IFMXClipboardService;
     if TPlatformServices.Current.SupportsPlatformService(IFMXClipboardService, svc) then
-    begin
       svc.SetClipboard(string(&private));
-      Self.Synchronize(procedure
-      begin
-        edtRecipient.Text := string(&public);
-        MessageDlg(
-          'A new wallet has been generated for you.' + #10#10 +
-          'Your private key has been copied to the clipboard.' + #10#10 +
-          'Please paste your private key in a safe place (for example: your password manager), then clear the clipboard.',
-          TMsgDlgType.mtInformation, [TMsgDlgBtn.mbOK], 0);
-      end);
-    end;
+
+    Self.Synchronize(procedure
+    begin
+      edtRecipient.Text := string(&public);
+      MessageDlg(
+        'A new wallet has been generated for you.' + #10#10 +
+        'Your private key has been copied to the clipboard.' + #10#10 +
+        'Please paste your private key in a safe place (for example: your password manager), then clear the clipboard.',
+        TMsgDlgType.mtInformation, [TMsgDlgBtn.mbOK], 0);
+    end);
   end);
 end;
 
 procedure TfrmMain.Init;
 begin
-  for var chain in CHAINS do
-    cboChain.Items.AddObject(chain.Name, TObject(chain));
+  Self.Caption := Self.Caption + ' v' + common.Release;
+  for var C in CHAINS do cboChain.Items.AddObject(C.Name, TObject(C));
   cboChain.ItemIndex := 0;
   edtOwner.SetFocus;
 end;
@@ -262,8 +302,8 @@ end;
 
 procedure TfrmMain.Migrate;
 begin
-  var count := FAssets.Checked;
-  if count = 0 then
+  var checked := FAssets.Checked;
+  if checked = 0 then
   begin
     common.ShowError('Nothing to do.');
     EXIT;
@@ -300,7 +340,7 @@ begin
           Self.Synchronize(procedure
           begin
             answer := MessageDlg(
-              Format('Are you sure you want to migrate %d tokens from %s to %s on the %s network?', [count, sOwner, sRecipient, Chain.Name]),
+              Format('Are you sure you want to migrate %d tokens from %s to %s on the %s network?', [checked, sOwner, sRecipient, Chain.Name]),
               TMsgDlgType.mtConfirmation, [TMsgDlgBtn.mbYes, TMsgDlgBtn.mbNo], 0
             )
           end);
@@ -321,7 +361,7 @@ begin
 
                   Self.Synchronize(procedure
                   begin
-                    progress.Get(Self).Step('Sending transaction %d of %d. Please wait...', idx, count);
+                    progress.Get(Self).Step('Sending transaction %d of %d. Please wait...', idx, checked);
                   end);
 
                   FAssets[idx].Transfer(Client, &private, aRecipient, procedure(hash: TTxHash; err: IError)
@@ -336,7 +376,7 @@ begin
                   progress.Get(Self).Close;
                 end
               );
-              progress.Get(Self).Prompt(Format('Sending %d transactions. Please wait...', [count]));
+              progress.Get(Self).Prompt(Format('Sending %d transactions. Please wait...', [checked]));
             end;
           end;
         end, True);
@@ -371,92 +411,9 @@ begin
   end);
 end;
 
-// includes 30k Uniswap v2 LP tokens if bUniswap is true, otherwise no LP tokens
-procedure TfrmMain.Scan(bUniswap: Boolean);
+procedure TfrmMain.Scan(aSettings: TSettings);
 begin
   Self.Clear;
-
-  var enumerate := procedure(owner: TAddress; tokens: TTokens)
-  begin
-    // step #4: get your balance for each token
-    tokens.Enumerate(
-      // foreach
-      procedure(idx: Integer; next: TProc)
-      begin
-        Self.Synchronize(procedure
-        begin
-          progress.Get(Self).Step('Scanning for %d/%d tokens in your wallet. Please wait...', idx, Length(tokens));
-        end);
-
-        tokens[idx].Balance(Client, owner, procedure(balance: BigInteger; err: IError)
-        begin
-          if Self.Cancelled then EXIT;
-
-          if Assigned(err) then
-          begin
-            next;
-            EXIT;
-          end;
-
-          if balance.IsPositive then
-          begin
-            FAssets := FAssets + [asset.Create(tokens[idx], balance)];
-            Self.Synchronize(procedure
-            begin
-              Grid.RowCount := Length(FAssets);
-              btnMigrate.Enabled := True;
-              Self.Invalidate;
-            end);
-          end;
-
-          next;
-        end);
-      end,
-      // done
-      procedure
-      begin
-        // step #5: download and display the token icon
-        FAssets.Enumerate(
-          // foreach
-          procedure(idx: Integer; next: TProc)
-          begin
-            if FAssets[idx].Token.LogoURI.IsEmpty then
-            begin
-              next;
-              EXIT;
-            end;
-
-            web3.http.get(FAssets[idx].Token.LogoURI.Replace('ipfs://', 'https://ipfs.io/ipfs/'), procedure(img: IHttpResponse; err: IError)
-            begin
-              if Self.Cancelled then EXIT;
-
-              if Assigned(err) then
-              begin
-                next;
-                EXIT;
-              end;
-
-              try
-                FAssets[idx].Bitmap.LoadFromStream(img.ContentStream);
-              except end;
-
-              Synchronize(procedure
-              begin
-                colImage.UpdateCell(idx);
-              end);
-
-              next;
-            end);
-          end,
-          // done
-          procedure
-          begin
-            progress.Get(Self).Close;
-          end
-        );
-      end
-    );
-  end;
 
   // step #1: resolve the owner ENS name
   Self.Owner(procedure(owner: TAddress; err: IError)
@@ -469,8 +426,8 @@ begin
       EXIT;
     end;
 
-    // step #2: get the tokens on this chain that Uniswap knows about
-    web3.eth.tokenlists.tokens(Chain, procedure(tokens: TTokens; err: IError)
+    // step #2: count the total number of tokens we can scan
+    Self.Count(aSettings, procedure(cnt: BigInteger; err: IError)
     begin
       if Self.Cancelled then EXIT;
 
@@ -480,29 +437,211 @@ begin
         EXIT;
       end;
 
-      // step #3: include 30k Uniswap v2 LP tokens (optional)
-      if bUniswap then
+      // step #3: get the tokens on this chain that Uniswap knows about
+      web3.eth.tokenlists.tokens(Chain, procedure(tokens: TTokens; err: IError)
       begin
-        web3.eth.tokenlists.tokens('https://raw.githubusercontent.com/jab416171/uniswap-pairtokens/master/uniswap_pair_tokens.json', procedure(uniswap: TTokens; err: IError)
+        if Self.Cancelled then EXIT;
+
+        if Assigned(err) then
         begin
-          if Self.Cancelled then EXIT;
+          common.ShowError(err, Chain);
+          EXIT;
+        end;
 
-          if Assigned(err) then
+        var num := 0;
+
+        tokens.Enumerate(
+          // foreach
+          procedure(idx: Integer; next: TProc)
           begin
-            common.ShowError(err, Chain);
-            EXIT;
-          end;
+            Inc(num, 1);
 
-          enumerate(owner, tokens + uniswap);
-        end);
-        EXIT;
-      end;
+            Self.Synchronize(procedure
+            begin
+              progress.Get(Self).Step('Scanning for %d/%d tokens in your wallet. Please wait...', num, cnt.AsInteger);
+            end);
 
-      enumerate(owner, tokens);
+            tokens[idx].Balance(Client, owner, procedure(balance: BigInteger; err: IError)
+            begin
+              if Self.Cancelled then EXIT;
+
+              if Assigned(err) then
+              begin
+                next;
+                EXIT;
+              end;
+
+              if balance.IsPositive then
+              begin
+                FAssets := FAssets + [asset.Create(tokens[idx], balance)];
+                Self.Synchronize(procedure
+                begin
+                  Grid.RowCount := FAssets.Length;
+                  Self.Update;
+                end);
+              end;
+
+              next;
+            end);
+          end,
+          // done
+          procedure
+          begin
+          ( // step #4: scan for (erc-721 and erc-1155) NFTs (optional)
+            procedure(callback: TProc)
+            begin
+              if NFTs in aSettings then
+              begin
+                web3.eth.opensea.NFTs(Chain, OPENSEA_API_KEY, owner, procedure(tokens: TNFTs; err: IError)
+                begin
+                  if Self.Cancelled then EXIT;
+
+                  if Assigned(err) then
+                  begin
+                    common.ShowError(err, Chain);
+                    EXIT;
+                  end;
+
+                  tokens.Enumerate(
+                    // foreach
+                    procedure(idx: Integer; next: TProc)
+                    begin
+                      FAssets := FAssets + [asset.Create(tokens[idx])];
+                      Self.Synchronize(procedure
+                      begin
+                        Grid.RowCount := FAssets.Length;
+                        Self.Update;
+                      end);
+                      next;
+                    end,
+                    // done
+                    callback
+                  );
+                end);
+                EXIT;
+              end;
+              callback;
+            end
+          )(procedure
+            begin
+            ( // step #5: scan for 30k Uniswap v2 LP tokens (optional)
+              procedure(callback: TProc)
+              begin
+                if UniswapPairs in aSettings then
+                begin
+                  web3.eth.tokenlists.tokens(UNISWAP_PAIR_TOKENS, procedure(tokens: TTokens; err: IError)
+                  begin
+                    if Self.Cancelled then EXIT;
+
+                    if Assigned(err) then
+                    begin
+                      common.ShowError(err, Chain);
+                      EXIT;
+                    end;
+
+                    tokens.Enumerate(
+                      // foreach
+                      procedure(idx: Integer; next: TProc)
+                      begin
+                        Inc(num, 1);
+
+                        Self.Synchronize(procedure
+                        begin
+                          progress.Get(Self).Step('Scanning for %d/%d tokens in your wallet. Please wait...', num, cnt.AsInteger);
+                        end);
+
+                        tokens[idx].Balance(Client, owner, procedure(balance: BigInteger; err: IError)
+                        begin
+                          if Self.Cancelled then EXIT;
+
+                          if Assigned(err) then
+                          begin
+                            next;
+                            EXIT;
+                          end;
+
+                          if balance.IsPositive then
+                          begin
+                            FAssets := FAssets + [asset.Create(tokens[idx], balance)];
+                            Self.Synchronize(procedure
+                            begin
+                              Grid.RowCount := FAssets.Length;
+                              Self.Update;
+                            end);
+                          end;
+
+                          next;
+                        end);
+                      end,
+                      // done
+                      callback
+                    );
+                  end);
+                  EXIT;
+                end;
+                callback;
+              end
+            )(procedure
+              begin
+                // step #6: download and display the token icon
+                FAssets.Enumerate(
+                  // foreach
+                  procedure(idx: Integer; next: TProc)
+                  begin
+                    if FAssets[idx].LogoURI.IsEmpty then
+                    begin
+                      next;
+                      EXIT;
+                    end;
+
+                    web3.http.get(FAssets[idx].LogoURI, [], procedure(img: IHttpResponse; err: IError)
+                    begin
+                      if Self.Cancelled then EXIT;
+
+                      if Assigned(err) then
+                      begin
+                        next;
+                        EXIT;
+                      end;
+
+                      try
+                        FAssets[idx].Bitmap.LoadFromStream(img.ContentStream);
+                      except end;
+
+                      Synchronize(procedure
+                      begin
+                        colImage.UpdateCell(idx);
+                      end);
+
+                      next;
+                    end);
+                  end,
+                  // done
+                  procedure
+                  begin
+                    progress.Get(Self).Close;
+                  end
+                );
+              end
+            );
+            end
+          );
+          end
+        );
+      end);
     end);
   end);
 
   progress.Get(Self).Prompt('Scanning for tokens in your wallet. Please wait...');
+end;
+
+function TfrmMain.Settings: TSettings;
+begin
+  Result := [];
+  if (Chain = web3.Ethereum) and chkScanForUniswapPairs.IsChecked then
+    Result := Result + [UniswapPairs];
+  if (Chain in [web3.Ethereum, web3.Rinkeby]) and chkScanForNFTs.IsChecked then
+    Result := Result + [NFTs];
 end;
 
 class procedure TfrmMain.Synchronize(P: TThreadProcedure);
@@ -519,6 +658,21 @@ end;
 procedure TfrmMain.Unlock;
 begin
   if FLocked > 0 then Dec(FLocked);
+end;
+
+procedure TfrmMain.Update;
+begin
+  chkSelectAll.Enabled := Self.FAssets.Length > 0;
+  btnMigrate.Enabled := Self.FAssets.Length > 0;
+  Self.Invalidate;
+end;
+
+//---------------------------------- public -----------------------------------
+
+constructor TfrmMain.Create(aOwner: TComponent);
+begin
+  inherited Create(aOwner);
+  Init;
 end;
 
 end.

@@ -11,16 +11,18 @@ uses
   Velthuis.BigIntegers,
   // web3
   web3,
+  web3.eth.opensea,
   web3.eth.tokenlists,
   web3.eth.types;
 
 type
   IAsset = interface
-    function Token: IToken;
     function Balance: Double;
     function Bitmap: TBitmap;
     function Checked: Boolean;
     function Check(Value: Boolean): IAsset;
+    function LogoURI: string;
+    function Name: string;
     procedure Transfer(client: IWeb3; from: TPrivateKey; &to: TAddress; callback: TAsyncTxHash);
   end;
 
@@ -29,9 +31,11 @@ type
   TAssetsHelper = record helper for TAssets
     function Checked: Integer;
     procedure Enumerate(foreach: TProc<Integer, TProc>; done: TProc);
+    function Length: Integer;
   end;
 
-function Create(const aToken: IToken; aBalance: BigInteger): IAsset;
+function Create(const aToken: IToken; aBalance: BigInteger): IAsset; overload;
+function Create(const aNFT: INFT): IAsset; overload;
 
 implementation
 
@@ -39,34 +43,61 @@ uses
   // Delphi
   System.Math,
   // web3
-  web3.eth.erc20;
+  web3.eth.erc20,
+  web3.eth.erc721,
+  web3.eth.erc1155;
 
 {----------------------------------- TAsset -----------------------------------}
 
 type
   TAsset = class(TInterfacedObject, IAsset)
   private
-    FToken: IToken;
-    FBitmap: TBitmap;
-    FChecked: Boolean;
-    FBalance: BigInteger;
+    FAddress : TAddress;
+    FBalance : BigInteger;
+    FBitmap  : TBitmap;
+    FChecked : Boolean;
+    FDecimals: Integer;
+    FLogoURI : string;
+    FName    : string;
+    FStandard: TStandard;
+    FFTokenId: BigInteger;
   public
-    function Token: IToken;
     function Balance: Double;
     function Bitmap: TBitmap;
     function Checked: Boolean;
     function Check(Value: Boolean): IAsset;
+    function LogoURI: string;
+    function Name: string;
     procedure Transfer(client: IWeb3; from: TPrivateKey; &to: TAddress; callback: TAsyncTxHash);
-    constructor Create(const aToken: IToken; aBalance: BigInteger);
+    constructor Create(
+      aStandard  : TStandard;
+      aAddress   : TAddress;
+      aTokenId   : BigInteger;
+      const aName: string;
+      aDecimals  : Integer;
+      const aLogo: string;
+      aBalance   : BigInteger);
     destructor Destroy; override;
   end;
 
-constructor TAsset.Create(const aToken: IToken; aBalance: BigInteger);
+constructor TAsset.Create(
+  aStandard  : TStandard;
+  aAddress   : TAddress;
+  aTokenId   : BigInteger;
+  const aName: string;
+  aDecimals  : Integer;
+  const aLogo: string;
+  aBalance   : BigInteger);
 begin
   inherited Create;
-  FToken := aToken;
-  FChecked := True;
-  FBalance := aBalance;
+  FAddress  := aAddress;
+  FBalance  := aBalance;
+  FChecked  := True;
+  FDecimals := aDecimals;
+  FLogoURI  := aLogo;
+  FName     := aName;
+  FStandard := aStandard;
+  FFTokenId := aTokenId;
 end;
 
 destructor TAsset.Destroy;
@@ -75,23 +106,17 @@ begin
   inherited Destroy;
 end;
 
-function TAsset.Token: IToken;
-begin
-  Result := FToken;
-end;
-
 function TAsset.Balance: Double;
 begin
-  if Self.Token.Decimals = 0 then
+  if FDecimals = 0 then
     Result := FBalance.AsDouble
   else
-    Result := FBalance.AsDouble / Power(10, Self.Token.Decimals);
+    Result := FBalance.AsDouble / Power(10, FDecimals);
 end;
 
 function TAsset.Bitmap: TBitmap;
 begin
-  if not Assigned(FBitmap) then
-    FBitmap := TBitmap.Create;
+  if not Assigned(FBitmap) then FBitmap := TBitmap.Create;
   Result := FBitmap;
 end;
 
@@ -106,13 +131,46 @@ begin
   Result := Self;
 end;
 
+function TAsset.LogoURI: string;
+begin
+  Result := FLogoURI.Replace('ipfs://', 'https://ipfs.io/ipfs/');
+end;
+
+function TAsset.Name: string;
+begin
+  Result := FName;
+end;
+
 procedure TAsset.Transfer(client: IWeb3; from: TPrivateKey; &to: TAddress; callback: TAsyncTxHash);
 begin
-  var erc20 := TERC20.Create(client, Self.Token.Address);
-  try
-    erc20.Transfer(from, &to, FBalance, callback);
-  finally
-    erc20.Free;
+  case FStandard of
+    erc20:
+    begin
+      var erc20 := TERC20.Create(client, FAddress);
+      try
+        erc20.Transfer(from, &to, FBalance, callback);
+      finally
+        erc20.Free;
+      end;
+    end;
+    erc721:
+    begin
+      var erc721 := TERC721.Create(client, FAddress);
+      try
+        erc721.SafeTransferFrom(from, &to, FFTokenId, callback);
+      finally
+        erc721.Free;
+      end;
+    end;
+    erc1155:
+    begin
+      var erc1155 := TERC1155.Create(client, FAddress);
+      try
+        erc1155.SafeTransferFrom(from, &to, FFTokenId, FBalance, callback);
+      finally
+        erc1155.Free;
+      end;
+    end;
   end;
 end;
 
@@ -131,7 +189,7 @@ begin
 
   next := procedure(assets: TAssets; idx: Integer)
   begin
-    if idx >= Length(assets) then
+    if idx >= assets.Length then
     begin
       if Assigned(done) then done;
       EXIT;
@@ -142,7 +200,7 @@ begin
     end);
   end;
 
-  if Length(Self) = 0 then
+  if Self.Length = 0 then
   begin
     if Assigned(done) then done;
     EXIT;
@@ -151,11 +209,21 @@ begin
   next(Self, 0);
 end;
 
+function TAssetsHelper.Length: Integer;
+begin
+  Result := System.Length(Self);
+end;
+
 {----------------------------------- public -----------------------------------}
 
 function Create(const aToken: IToken; aBalance: BigInteger): IAsset;
 begin
-  Result := TAsset.Create(aToken, aBalance);
+  Result := TAsset.Create(erc20, aToken.Address, 0, aToken.Name, aToken.Decimals, aToken.LogoURI, aBalance);
+end;
+
+function Create(const aNFT: INFT): IAsset;
+begin
+  Result := TAsset.Create(aNFT.Standard, aNFT.Address, aNFT.TokenId, aNFT.Name, 0, aNFT.ImageURL, 1);
 end;
 
 end.
