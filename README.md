@@ -61,7 +61,7 @@ Maybe. No independent audit has been or will be commissioned. You are encouraged
 
 ## How can I compile this app?
 
-1. Download and install [Delphi](https://www.embarcadero.com/products/delphi)
+1. Download and install [Delphi Community Edition](https://www.embarcadero.com/products/delphi/starter)
 2. Clone [Delphereum](https://github.com/svanas/delphereum) and the [dependencies](https://github.com/svanas/delphereum#dependencies)
 3. The compiler will stop at [migratooor.api.key](https://github.com/svanas/migratooor/blob/main/migratooor.api.key)
 4. Enter your [Infura](https://infura.io) API key and your [OpenSea](https://opensea.io) API key
