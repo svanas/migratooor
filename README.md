@@ -1,7 +1,7 @@
 [![GitHub release](https://img.shields.io/github/release/svanas/migratooor)](https://github.com/svanas/migratooor/releases/latest)
 [![GitHub license](https://img.shields.io/github/license/svanas/migratooor)](https://github.com/svanas/migratooor/blob/main/LICENSE)
-[![macOS](https://svgshare.com/i/ZjP.svg)](https://github.com/svanas/migratooor/releases/latest/download/macOS.zip)
-[![Windows](https://svgshare.com/i/ZhY.svg)](https://github.com/svanas/migratooor/releases/latest/download/Windows.zip)
+[![macOS](https://img.shields.io/badge/os-macOS-green)](https://github.com/svanas/migratooor/releases/latest/download/macOS.zip)
+[![Windows](https://img.shields.io/badge/os-Windows-green)](https://github.com/svanas/migratooor/releases/latest/download/Windows.zip)
 
 # Migratooor
 
