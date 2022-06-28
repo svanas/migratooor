@@ -9,13 +9,17 @@ Migratooor transfers all your tokens from one wallet to another.
 
 ## Why would I want to do that?
 
-If...
+if...
 
 1. your private key is compromised, or
 2. your wallet is linked to your identity, or
 3. you want to revoke every token approval
 
 ...then you will want to move all your tokens to a new, fresh wallet.
+
+## Where can I download this app?
+
+You can download migratooor for [Windows](https://github.com/svanas/migratooor/releases/latest/download/Windows.zip) or [macOS](https://github.com/svanas/migratooor/releases/latest/download/macOS.zip).
 
 ## How does it work?
 
