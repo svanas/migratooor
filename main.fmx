@@ -110,7 +110,7 @@ object frmMain: TfrmMain
       Size.Height = 19.000000000000000000
       Size.PlatformDefault = False
       TabOrder = 1
-      Text = 'Scan for (erc-721 and erc-1155) NFTs'
+      Text = 'Scan for every NFT known to OpenSea'
       OnChange = chkScanForChange
     end
     object chkScanForERC20s: TCheckBox

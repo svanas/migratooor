@@ -284,8 +284,10 @@ begin
 end;
 
 procedure TfrmMain.Init;
+const
+  VERSION = {$I migratooor.version};
 begin
-  Self.Caption := Self.Caption + ' v' + common.Release;
+  Self.Caption := Self.Caption + ' v' + VERSION;
   for var C in CHAINS do cboChain.Items.AddObject(C.Name, TObject(C));
   cboChain.ItemIndex := 0;
   edtOwner.SetFocus;
