@@ -79,6 +79,7 @@ type
     procedure Recipient(callback: TAsyncAddress);
     procedure Scan(aSettings: TSettings);
     function Settings: TSettings;
+    class procedure Queue(P: TThreadProcedure);
     class procedure Synchronize(P: TThreadProcedure);
     procedure Unlock;
     procedure Update;
@@ -141,7 +142,7 @@ begin
     chkScanForERC20s.Text := 'Scan for (calculating...) erc-20 tokens';
     web3.eth.tokenlists.count(Chain, procedure(cnt: BigInteger; err: IError)
     begin
-      Self.Synchronize(procedure
+      Self.Queue(procedure
       begin
         chkScanForERC20s.Text := Format('Scan for %s known erc-20 tokens', [cnt.ToString]);
       end);
@@ -359,7 +360,7 @@ begin
                     EXIT;
                   end;
 
-                  Self.Synchronize(procedure
+                  Self.Queue(procedure
                   begin
                     progress.Get(Self).Step('Sending transaction %d of %d. Please wait...', idx, checked);
                   end);
@@ -456,7 +457,7 @@ begin
           begin
             Inc(num, 1);
 
-            Self.Synchronize(procedure
+            Self.Queue(procedure
             begin
               progress.Get(Self).Step('Scanning for %d/%d tokens in your wallet. Please wait...', num, cnt.AsInteger);
             end);
@@ -474,7 +475,7 @@ begin
               if balance.IsPositive then
               begin
                 FAssets := FAssets + [asset.Create(tokens[idx], balance)];
-                Self.Synchronize(procedure
+                Self.Queue(procedure
                 begin
                   Grid.RowCount := FAssets.Length;
                   Self.Update;
@@ -507,7 +508,7 @@ begin
                     procedure(idx: Integer; next: TProc)
                     begin
                       FAssets := FAssets + [asset.Create(tokens[idx])];
-                      Self.Synchronize(procedure
+                      Self.Queue(procedure
                       begin
                         Grid.RowCount := FAssets.Length;
                         Self.Update;
@@ -545,7 +546,7 @@ begin
                       begin
                         Inc(num, 1);
 
-                        Self.Synchronize(procedure
+                        Self.Queue(procedure
                         begin
                           progress.Get(Self).Step('Scanning for %d/%d tokens in your wallet. Please wait...', num, cnt.AsInteger);
                         end);
@@ -563,7 +564,7 @@ begin
                           if balance.IsPositive then
                           begin
                             FAssets := FAssets + [asset.Create(tokens[idx], balance)];
-                            Self.Synchronize(procedure
+                            Self.Queue(procedure
                             begin
                               Grid.RowCount := FAssets.Length;
                               Self.Update;
@@ -608,7 +609,7 @@ begin
                         FAssets[idx].Bitmap.LoadFromStream(img.ContentStream);
                       except end;
 
-                      Synchronize(procedure
+                      Queue(procedure
                       begin
                         colImage.UpdateCell(idx);
                       end);
@@ -642,6 +643,17 @@ begin
     Result := Result + [UniswapPairs];
   if (Chain in [web3.Ethereum, web3.Rinkeby]) and chkScanForNFTs.IsChecked then
     Result := Result + [NFTs];
+end;
+
+class procedure TfrmMain.Queue(P: TThreadProcedure);
+begin
+  if TThread.CurrentThread.ThreadID = MainThreadId then
+    P
+  else
+    TThread.Queue(nil, procedure
+    begin
+      P
+    end);
 end;
 
 class procedure TfrmMain.Synchronize(P: TThreadProcedure);
