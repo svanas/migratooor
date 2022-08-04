@@ -2,7 +2,7 @@ object frmMain: TfrmMain
   Left = 0
   Top = 0
   Caption = 'Migratooor'
-  ClientHeight = 625
+  ClientHeight = 633
   ClientWidth = 572
   FormFactor.Width = 320
   FormFactor.Height = 480
@@ -50,7 +50,7 @@ object frmMain: TfrmMain
     CanFocus = True
     ClipChildren = True
     Position.X = 8.000000000000000000
-    Position.Y = 154.000000000000000000
+    Position.Y = 162.000000000000000000
     Size.Width = 556.000000000000000000
     Size.Height = 433.000000000000000000
     Size.PlatformDefault = False
@@ -123,7 +123,7 @@ object frmMain: TfrmMain
       Size.Height = 19.000000000000000000
       Size.PlatformDefault = False
       TabOrder = 0
-      Text = 'Scan for (calculating...) erc-20 tokens'
+      Text = 'Scan for (calculating...) ERC-20 tokens'
     end
     object chkScanForUniswapPairs: TCheckBox
       Anchors = [akLeft, akTop, akRight]
@@ -140,7 +140,7 @@ object frmMain: TfrmMain
   object lblRecipient: TLabel
     Anchors = [akLeft, akBottom]
     Position.X = 8.000000000000000000
-    Position.Y = 597.000000000000000000
+    Position.Y = 605.000000000000000000
     Size.Width = 88.000000000000000000
     Size.Height = 17.000000000000000000
     Size.PlatformDefault = False
@@ -153,7 +153,7 @@ object frmMain: TfrmMain
     Anchors = [akLeft, akRight, akBottom]
     TabOrder = 7
     Position.X = 104.000000000000000000
-    Position.Y = 595.000000000000000000
+    Position.Y = 603.000000000000000000
     Size.Width = 372.000000000000000000
     Size.Height = 22.000000000000000000
     Size.PlatformDefault = False
@@ -174,7 +174,7 @@ object frmMain: TfrmMain
     Anchors = [akRight, akBottom]
     Enabled = False
     Position.X = 484.000000000000000000
-    Position.Y = 595.000000000000000000
+    Position.Y = 603.000000000000000000
     TabOrder = 8
     Text = 'Migrate'
     OnClick = btnMigrateClick

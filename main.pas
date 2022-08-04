@@ -139,12 +139,12 @@ procedure TfrmMain.cboChainChange(Sender: TObject);
 begin
   Self.Lock;
   try
-    chkScanForERC20s.Text := 'Scan for (calculating...) erc-20 tokens';
+    chkScanForERC20s.Text := 'Scan for (calculating...) ERC-20 tokens';
     web3.eth.tokenlists.count(Chain, procedure(cnt: BigInteger; err: IError)
     begin
       Self.Queue(procedure
       begin
-        chkScanForERC20s.Text := Format('Scan for %s known erc-20 tokens', [cnt.ToString]);
+        chkScanForERC20s.Text := Format('Scan for %s known ERC-20 tokens', [cnt.ToString]);
       end);
     end);
 
@@ -273,7 +273,7 @@ begin
 
     Self.Synchronize(procedure
     begin
-      edtRecipient.Text := string(&public);
+      edtRecipient.Text := string(&public.ToChecksum);
       MessageDlg(
         'A new wallet has been generated for you.' + #10#10 +
         'Your private key has been copied to the clipboard.' + #10#10 +
