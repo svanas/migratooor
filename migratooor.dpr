@@ -4,8 +4,8 @@ uses
   System.StartUpCopy,
   FMX.Forms,
   main in 'main.pas' {frmMain},
-  common in 'common.pas',
   asset in 'asset.pas',
+  common in 'common.pas',
   progress in 'progress.pas' {frmProgress};
 
 {$R *.res}

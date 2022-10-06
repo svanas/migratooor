@@ -18,6 +18,8 @@ uses
   FMX.ScrollBox,
   FMX.StdCtrls,
   FMX.Types,
+  // Velthuis' BigNumbers
+  Velthuis.BigIntegers,
   // web3
   web3,
   web3.eth.types,
@@ -67,16 +69,16 @@ type
     function Cancelled: Boolean;
     function Chain: TChain;
     procedure Clear;
-    function Client: IWeb3;
-    procedure Count(aSettings: TSettings; callback: TAsyncQuantity);
+    function GetClient: IResult<IWeb3>;
+    procedure Count(aSettings: TSettings; callback: TProc<BigInteger, IError>);
     class function Ethereum: IWeb3;
     procedure Generate;
     procedure Init;
     procedure Lock;
     function Locked: Boolean;
     procedure Migrate;
-    procedure Owner(callback: TAsyncAddress);
-    procedure Recipient(callback: TAsyncAddress);
+    procedure Owner(callback: TProc<TAddress, IError>);
+    procedure Recipient(callback: TProc<TAddress, IError>);
     procedure Scan(aSettings: TSettings);
     function Settings: TSettings;
     class procedure Queue(P: TThreadProcedure);
@@ -101,8 +103,6 @@ uses
   // FireMonkey
   FMX.Dialogs,
   FMX.Platform,
-  // Velthuis' BigNumbers
-  Velthuis.BigIntegers,
   // web3
   web3.eth,
   web3.eth.infura,
@@ -194,7 +194,7 @@ end;
 
 function TfrmMain.Cancelled: Boolean;
 begin
-  var P := progress.Get(Self);
+  const P = progress.Get(Self);
   Result := Assigned(P) and P.Cancelled;
   if Result and P.Visible then P.Close;
 end;
@@ -214,12 +214,18 @@ begin
   Self.Invalidate;
 end;
 
-function TfrmMain.Client: IWeb3;
+function TfrmMain.GetClient: IResult<IWeb3>;
 begin
-  var aClient := TWeb3.Create(Chain, web3.eth.infura.endpoint(Chain, INFURA_PROJECT_ID));
+  const endpoint = web3.eth.infura.endpoint(Chain, INFURA_PROJECT_ID);
+  if endpoint.IsErr then
+  begin
+    Result := TResult<IWeb3>.Err(nil, endpoint.Error);
+    EXIT;
+  end;
 
+  const client = TWeb3.Create(Chain, endpoint.Value);
   // do not approve each and every transaction individually
-  aClient.OnSignatureRequest := procedure(
+  client.OnSignatureRequest := procedure(
     from, &to   : TAddress;
     gasPrice    : TWei;
     estimatedGas: BigInteger;
@@ -228,16 +234,16 @@ begin
     callback(True, nil);
   end;
 
-  Result := aClient;
+  Result := TResult<IWeb3>.Ok(client);
 end;
 
-procedure TfrmMain.Count(aSettings: TSettings; callback: TAsyncQuantity);
+procedure TfrmMain.Count(aSettings: TSettings; callback: TProc<BigInteger, IError>);
 begin
   // step #1: count the tokens on this chain that Uniswap knows about
   web3.eth.tokenlists.count(Chain, procedure(cnt1: BigInteger; err: IError)
   begin
     ( // step #2: count the Uniswap v2 LP tokens (optional)
-      procedure(return: TAsyncQuantity)
+      procedure(return: TProc<BigInteger, IError>)
       begin
         if UniswapPairs in aSettings then
           web3.eth.tokenlists.count(UNISWAP_PAIR_TOKENS, return)
@@ -253,33 +259,32 @@ end;
 
 class function TfrmMain.Ethereum: IWeb3;
 begin
-  Result := TWeb3.Create(web3.Ethereum, web3.eth.infura.endpoint(web3.Ethereum, INFURA_PROJECT_ID));
+  Result := TWeb3.Create(web3.Ethereum, web3.eth.infura.endpoint(web3.Ethereum, INFURA_PROJECT_ID).Value);
 end;
 
 procedure TfrmMain.Generate;
 begin
-  var &private := TPrivateKey.Generate;
-  &private.Address(procedure(&public: TAddress; err: IError)
+  const &private = TPrivateKey.Generate;
+
+  const &public = &private.GetAddress;
+  if &public.IsErr then
   begin
-    if Assigned(err) then
-    begin
-      common.ShowError(err, Chain);
-      EXIT;
-    end;
+    common.ShowError(&public.Error, Chain);
+    EXIT;
+  end;
 
-    var svc: IFMXClipboardService;
-    if TPlatformServices.Current.SupportsPlatformService(IFMXClipboardService, svc) then
-      svc.SetClipboard(string(&private));
+  var svc: IFMXClipboardService;
+  if TPlatformServices.Current.SupportsPlatformService(IFMXClipboardService, svc) then
+    svc.SetClipboard(string(&private));
 
-    Self.Synchronize(procedure
-    begin
-      edtRecipient.Text := string(&public.ToChecksum);
-      MessageDlg(
-        'A new wallet has been generated for you.' + #10#10 +
-        'Your private key has been copied to the clipboard.' + #10#10 +
-        'Please paste your private key in a safe place (for example: your password manager), then clear the clipboard.',
-        TMsgDlgType.mtInformation, [TMsgDlgBtn.mbOK], 0);
-    end);
+  Self.Synchronize(procedure
+  begin
+    edtRecipient.Text := string(&public.Value.ToChecksum);
+    MessageDlg(
+      'A new wallet has been generated for you.' + #10#10 +
+      'Your private key has been copied to the clipboard.' + #10#10 +
+      'Please paste your private key in a safe place (for example: your password manager), then clear the clipboard.',
+      TMsgDlgType.mtInformation, [TMsgDlgBtn.mbOK], 0);
   end);
 end;
 
@@ -305,7 +310,7 @@ end;
 
 procedure TfrmMain.Migrate;
 begin
-  var checked := FAssets.Checked;
+  const checked = FAssets.Checked;
   if checked = 0 then
   begin
     common.ShowError('Nothing to do.');
@@ -318,7 +323,7 @@ begin
       common.ShowError(err, web3.Ethereum);
       EXIT;
     end;
-    aOwner.ToString(Ethereum, procedure(const sOwner: string; err: IError)
+    aOwner.ToString(Ethereum, procedure(sOwner: string; err: IError)
     begin
       if Assigned(err) then
       begin
@@ -332,7 +337,7 @@ begin
           common.ShowError(err, web3.Ethereum);
           EXIT;
         end;
-        aRecipient.ToString(Ethereum, procedure(const sRecipient: string; err: IError)
+        aRecipient.ToString(Ethereum, procedure(sRecipient: string; err: IError)
         begin
           if Assigned(err) then
           begin
@@ -349,38 +354,51 @@ begin
           end);
           if answer = mrYes then
           begin
-            var &private := common.GetPrivateKey(aOwner);
-            if &private <> '' then
+            const client = Self.GetClient;
+            if client.IsErr then
             begin
-              FAssets.Enumerate(
-                // foreach
-                procedure(idx: Integer; next: TProc)
-                begin
-                  if not FAssets[idx].Checked then
-                  begin
-                    next;
-                    EXIT;
-                  end;
-
-                  Self.Queue(procedure
-                  begin
-                    progress.Get(Self).Step('Sending transaction %d of %d. Please wait...', idx, checked);
-                  end);
-
-                  FAssets[idx].Transfer(Client, &private, aRecipient, procedure(hash: TTxHash; err: IError)
-                  begin
-                    if Self.Cancelled then EXIT;
-                    next;
-                  end);
-                end,
-                // done
-                procedure
-                begin
-                  progress.Get(Self).Close;
-                end
-              );
-              progress.Get(Self).Prompt(Format('Sending %d transactions. Please wait...', [checked]));
+              common.ShowError(client.Error, Chain);
+              EXIT;
             end;
+
+            const &private = common.GetPrivateKey(aOwner);
+            if &private.IsErr then
+            begin
+              if Supports(&private.Error, ICancelled) then
+                { nothing }
+              else
+                common.ShowError(&private.Error, Chain);
+              EXIT;
+            end;
+
+            FAssets.Enumerate(
+              // foreach
+              procedure(idx: Integer; next: TProc)
+              begin
+                if not FAssets[idx].Checked then
+                begin
+                  next;
+                  EXIT;
+                end;
+
+                Self.Queue(procedure
+                begin
+                  progress.Get(Self).Step('Sending transaction %d of %d. Please wait...', idx, checked);
+                end);
+
+                FAssets[idx].Transfer(client.Value, &private.Value, aRecipient, procedure(hash: TTxHash; err: IError)
+                begin
+                  if Self.Cancelled then EXIT;
+                  next;
+                end);
+              end,
+              // done
+              procedure
+              begin
+                progress.Get(Self).Close;
+              end
+            );
+            progress.Get(Self).Prompt(Format('Sending %d transactions. Please wait...', [checked]));
           end;
         end, True);
       end);
@@ -388,7 +406,7 @@ begin
   end);
 end;
 
-procedure TfrmMain.Owner(callback: TAsyncAddress);
+procedure TfrmMain.Owner(callback: TProc<TAddress, IError>);
 begin
   if edtOwner.Text.Length = 0 then
     callback(EMPTY_ADDRESS, nil)
@@ -396,7 +414,7 @@ begin
     TAddress.New(Ethereum, edtOwner.Text, callback);
 end;
 
-procedure TfrmMain.Recipient(callback: TAsyncAddress);
+procedure TfrmMain.Recipient(callback: TProc<TAddress, IError>);
 begin
   TAddress.New(Ethereum, edtRecipient.Text, procedure(recipient: TAddress; err: IError)
   begin
@@ -451,6 +469,13 @@ begin
           EXIT;
         end;
 
+        const client = Self.GetClient;
+        if client.IsErr then
+        begin
+          common.ShowError(client.Error, Chain);
+          EXIT;
+        end;
+
         var num := 0;
 
         tokens.Enumerate(
@@ -464,7 +489,7 @@ begin
               progress.Get(Self).Step('Scanning for %d/%d tokens in your wallet. Please wait...', num, cnt.AsInteger);
             end);
 
-            tokens[idx].Balance(Client, owner, procedure(balance: BigInteger; err: IError)
+            tokens[idx].Balance(client.Value, owner, procedure(balance: BigInteger; err: IError)
             begin
               if Self.Cancelled then EXIT;
 
@@ -553,7 +578,7 @@ begin
                           progress.Get(Self).Step('Scanning for %d/%d tokens in your wallet. Please wait...', num, cnt.AsInteger);
                         end);
 
-                        tokens[idx].Balance(Client, owner, procedure(balance: BigInteger; err: IError)
+                        tokens[idx].Balance(client.Value, owner, procedure(balance: BigInteger; err: IError)
                         begin
                           if Self.Cancelled then EXIT;
 

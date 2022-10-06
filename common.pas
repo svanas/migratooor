@@ -13,12 +13,21 @@ const
     Rinkeby,
     Kovan,
     Goerli,
-    BSC,
+    BNB,
     Polygon,
     Optimism,
     Arbitrum,
     Fantom,
     Gnosis);
+
+type
+  ICancelled = interface(IError)
+  ['{EB6305B0-A310-43ED-A868-8BCB3334B11F}']
+  end;
+  TCancelled = class(TError, ICancelled)
+  public
+    constructor Create;
+  end;
 
 procedure ShowError(const msg: string); overload;
 procedure ShowError(const err: IError; chain: TChain); overload;
@@ -26,7 +35,7 @@ procedure ShowError(const err: IError; chain: TChain); overload;
 procedure OpenURL(const URL: string);
 procedure OpenTransaction(chain: TChain; tx: TTxHash);
 
-function GetPrivateKey(&public: TAddress): TPrivateKey;
+function GetPrivateKey(&public: TAddress): IResult<TPrivateKey>;
 
 implementation
 
@@ -48,6 +57,11 @@ uses
   web3.eth.tx,
   web3.eth.types,
   web3.utils;
+
+constructor TCancelled.Create;
+begin
+  inherited Create('');
+end;
 
 procedure ShowError(const msg: string);
 begin
@@ -96,12 +110,8 @@ begin
   OpenURL(chain.BlockExplorerURL + '/tx/' + string(tx));
 end;
 
-function GetPrivateKey(&public: TAddress): TPrivateKey;
-resourcestring
-  RS_PRIVATE_KEY_IS_INVALID = 'Private key is invalid.';
+function GetPrivateKey(&public: TAddress): IResult<TPrivateKey>;
 begin
-  Result := '';
-
   var &private: TPrivateKey;
   TThread.Synchronize(nil, procedure
   begin
@@ -109,31 +119,33 @@ begin
   end);
 
   if &private = '' then
+  begin
+    Result := TResult<TPrivateKey>.Err('', TCancelled.Create);
     EXIT;
+  end;
+
   if (
     (not web3.utils.isHex('', string(&private)))
   or
     (Length(&private) <> SizeOf(TPrivateKey) - 1)) then
   begin
-    common.ShowError(RS_PRIVATE_KEY_IS_INVALID);
+    Result := TResult<TPrivateKey>.Err('', 'Private key is invalid');
     EXIT;
   end;
 
-  &private.Address(procedure(addr: TAddress; err: IError)
+  const address = &private.GetAddress;
+  if address.IsErr then
   begin
-    if Assigned(err) then
-    begin
-      common.ShowError(err.Message);
-      &private := '';
-    end;
-    if string(addr).ToUpper <> string(&public).ToUpper then
-    begin
-      common.ShowError(RS_PRIVATE_KEY_IS_INVALID);
-      &private := '';
-    end;
-  end);
+    Result := TResult<TPrivateKey>.Err('', address.Error);
+    EXIT;
+  end;
+  if address.Value.ToChecksum <> &public.ToChecksum then
+  begin
+    Result := TResult<TPrivateKey>.Err('', 'Private key is invalid');
+    EXIT;
+  end;
 
-  Result := &private;
+  Result := TResult<TPrivateKey>.Ok(&private);
 end;
 
 end.

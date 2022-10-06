@@ -23,7 +23,7 @@ type
     function Check(Value: Boolean): IAsset;
     function LogoURI: string;
     function Name: string;
-    procedure Transfer(client: IWeb3; from: TPrivateKey; &to: TAddress; callback: TAsyncTxHash);
+    procedure Transfer(client: IWeb3; from: TPrivateKey; &to: TAddress; callback: TProc<TTxHash, IError>);
   end;
 
   TAssets = TArray<IAsset>;
@@ -68,7 +68,7 @@ type
     function Check(Value: Boolean): IAsset;
     function LogoURI: string;
     function Name: string;
-    procedure Transfer(client: IWeb3; from: TPrivateKey; &to: TAddress; callback: TAsyncTxHash);
+    procedure Transfer(client: IWeb3; from: TPrivateKey; &to: TAddress; callback: TProc<TTxHash, IError>);
     constructor Create(
       aStandard  : TStandard;
       aAddress   : TAddress;
@@ -141,12 +141,12 @@ begin
   Result := FName;
 end;
 
-procedure TAsset.Transfer(client: IWeb3; from: TPrivateKey; &to: TAddress; callback: TAsyncTxHash);
+procedure TAsset.Transfer(client: IWeb3; from: TPrivateKey; &to: TAddress; callback: TProc<TTxHash, IError>);
 begin
   case FStandard of
     erc20:
     begin
-      var erc20 := TERC20.Create(client, FAddress);
+      const erc20 = TERC20.Create(client, FAddress);
       try
         erc20.Transfer(from, &to, FBalance, callback);
       finally
@@ -155,7 +155,7 @@ begin
     end;
     erc721:
     begin
-      var erc721 := TERC721.Create(client, FAddress);
+      const erc721 = TERC721.Create(client, FAddress);
       try
         erc721.SafeTransferFrom(from, &to, FFTokenId, callback);
       finally
@@ -164,7 +164,7 @@ begin
     end;
     erc1155:
     begin
-      var erc1155 := TERC1155.Create(client, FAddress);
+      const erc1155 = TERC1155.Create(client, FAddress);
       try
         erc1155.SafeTransferFrom(from, &to, FFTokenId, FBalance, callback);
       finally
