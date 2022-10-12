@@ -33,7 +33,7 @@ It does not. Unless you use a smart contract wallet, there is no way to reduce t
 
 At the time of this writing, migratooor supports the following [EVM-compatible](https://chainlist.org) networks:
 * [Ethereum](https://ethereum.org)
-* [Binance Smart Chain](https://www.binance.org/en/smartChain)
+* [BNB Chain](https://www.bnbchain.org)
 * [Polygon](https://polygon.technology)
 * [Optimism](https://optimism.io)
 * [Arbitrum](https://arbitrum.io)
