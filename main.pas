@@ -148,7 +148,7 @@ begin
       end);
     end);
 
-    chkScanForNFTs.Enabled := Chain in [web3.Ethereum, web3.Rinkeby];
+    chkScanForNFTs.Enabled := Chain in [web3.Ethereum, web3.Goerli];
     chkScanForNFTs.IsChecked := chkScanForNFTs.Enabled;
 
     chkScanForUniswapPairs.Enabled := Chain = web3.Ethereum;
@@ -668,7 +668,7 @@ begin
   Result := [];
   if (Chain = web3.Ethereum) and chkScanForUniswapPairs.IsChecked then
     Result := Result + [UniswapPairs];
-  if (Chain in [web3.Ethereum, web3.Rinkeby]) and chkScanForNFTs.IsChecked then
+  if (Chain in [web3.Ethereum, web3.Goerli]) and chkScanForNFTs.IsChecked then
     Result := Result + [NFTs];
 end;
 
