@@ -101,6 +101,7 @@ uses
   System.Net.HttpClient,
   System.UITypes,
   // FireMonkey
+  FMX.BehaviorManager,
   FMX.Dialogs,
   FMX.Platform,
   // web3
@@ -196,7 +197,11 @@ function TfrmMain.Cancelled: Boolean;
 begin
   const P = progress.Get(Self);
   Result := Assigned(P) and P.Cancelled;
-  if Result and P.Visible then P.Close;
+  if Result and P.Visible then
+  begin
+    P.Close;
+    Self.Active := True;
+  end;
 end;
 
 function TfrmMain.Chain: TChain;
@@ -293,6 +298,7 @@ const
   VERSION = {$I migratooor.version};
 begin
   Self.Caption := Self.Caption + ' v' + VERSION;
+  Grid.AutoHide := TBehaviorBoolean.False;
   for var C in CHAINS do cboChain.Items.AddObject(C.Name, TObject(C));
   cboChain.ItemIndex := 0;
   edtOwner.SetFocus;
