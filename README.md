@@ -33,7 +33,7 @@ It does not. Unless you use a smart contract wallet, there is no way to reduce t
 
 At the time of this writing, migratooor supports the following [EVM-compatible](https://chainlist.org) networks:
 * [Ethereum](https://ethereum.org)
-* [Binance Smart Chain](https://www.binance.org/en/smartChain)
+* [BNB Chain](https://www.bnbchain.org)
 * [Polygon](https://polygon.technology)
 * [Optimism](https://optimism.io)
 * [Arbitrum](https://arbitrum.io)
@@ -53,15 +53,15 @@ Maybe. No independent audit has been or will be commissioned. You are encouraged
 
 ## How can I test this app?
 
-1. Switch your MetaMask to the [Rinkeby](https://rinkeby.etherscan.io) test network
-2. Navigate to https://rinkebyfaucet.com
-3. Copy your wallet address from MetaMask, press the `Send Me ETH` button
+1. Switch your MetaMask to the [Goerli](https://goerli.etherscan.io) test network
+2. Navigate to https://goerlifaucet.com
+3. Paste your wallet address and press the `Send Me ETH` button
 4. Wait for your transaction to get mined. Your wallet will get credited with 0.1 ETH
-5. Navigate to https://app.compound.finance 
-6. Click an `DAI`, then withdraw, and there will be a faucet button
-7. Wait for your transaction to get mined. Your wallet will get credited with 100 DAI
-8. Repeat step 6 and 7 for `USDC` and `USDT`
-9. Launch migratooor, paste your wallet address from MetaMask, select the Rinkeby network
+5. Navigate to https://goerli.balancer.fi/#/faucet
+6. Pick whatever token you will want to mint and press the `Drip` button
+7. Wait for your transaction to get mined.
+8. Repeat step 6 and 7 for the other tokens you will want to mint
+9. Launch migratooor, paste your wallet address from MetaMask, select the Goerli network
 
 ## How can I compile this app?
 
