@@ -45,7 +45,7 @@ At the time of this writing, migratooor supports the following [EVM-compatible](
 On the Ethereum network, migratooor scans for...
 * more than 5000 [ERC-20](https://ethereum.org/en/developers/docs/standards/tokens/erc-20) tokens, and
 * every NFT known to [OpenSea](https://opensea.io), and
-* more than 30,000 Uniswap v2 LP tokens.
+* more than 30,000 [Uniswap v2](https://v2.info.uniswap.org) LP tokens.
 
 ## Is this app secure?
 
