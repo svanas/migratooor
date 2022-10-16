@@ -7,6 +7,17 @@
 
 Migratooor transfers all your tokens from one wallet to another.
 
+| criteria                                              | support                                                  |
+|-------------------------------------------------------|----------------------------------------------------------|
+| supports multiple EVM chains                          | Y                                                        |
+| supports secret recovery phrase                       | N                                                        |
+| supports dry-runs                                     | Y (on the [Goerli](https://goerli.etherscan.io) testnet) |
+| supports ERC-20 tokens                                | Y                                                        |
+| supports ERC-721 tokens                               | Y                                                        |
+| supports ERC-1155 tokens                              | Y                                                        |
+| supports EIP-1559 transactions                        | Y                                                        |
+| supports [Ethereum Name Service](https://ens.domains) | Y                                                        |
+
 ## Why would I want to do that?
 
 if...
