@@ -6,17 +6,6 @@ uses
   // web3
   web3;
 
-const
-  CHAINS: array[0..7] of TChain = (
-    Ethereum,
-    Goerli,
-    BNB,
-    Polygon,
-    Optimism,
-    Arbitrum,
-    Fantom,
-    Gnosis);
-
 type
   ICancelled = interface(IError)
   ['{EB6305B0-A310-43ED-A868-8BCB3334B11F}']
@@ -29,9 +18,6 @@ type
 procedure ShowError(const msg: string); overload;
 procedure ShowError(const err: IError; chain: TChain); overload;
 
-procedure OpenURL(const URL: string);
-procedure OpenTransaction(chain: TChain; tx: TTxHash);
-
 function GetPrivateKey(&public: TAddress): IResult<TPrivateKey>;
 
 implementation
@@ -41,13 +27,6 @@ uses
   System.Classes,
   System.SysUtils,
   System.UITypes,
-{$IFDEF MSWINDOWS}
-  WinAPI.ShellAPI,
-  WinAPI.Windows,
-{$ENDIF MSWINDOWS}
-{$IFDEF POSIX}
-  Posix.Stdlib,
-{$ENDIF POSIX}
   // FireMonkey
   FMX.Dialogs,
   // web3
@@ -90,21 +69,6 @@ begin
     end;
     MessageDlg(err.Message, TMsgDlgType.mtError, [TMsgDlgBtn.mbOK], 0);
   end);
-end;
-
-procedure OpenURL(const URL: string);
-begin
-{$IFDEF MSWINDOWS}
-  ShellExecute(0, 'open', PChar(URL), nil, nil, SW_SHOWNORMAL);
-{$ENDIF MSWINDOWS}
-{$IFDEF POSIX}
-  _system(PAnsiChar('open ' + AnsiString(URL)));
-{$ENDIF POSIX}
-end;
-
-procedure OpenTransaction(chain: TChain; tx: TTxHash);
-begin
-  OpenURL(chain.BlockExplorerURL + '/tx/' + string(tx));
 end;
 
 function GetPrivateKey(&public: TAddress): IResult<TPrivateKey>;

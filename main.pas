@@ -149,7 +149,7 @@ begin
       end);
     end);
 
-    chkScanForNFTs.Enabled := Chain in [web3.Ethereum, web3.Goerli];
+    chkScanForNFTs.Enabled := (Chain = web3.Ethereum) or (Chain = web3.Goerli);
     chkScanForNFTs.IsChecked := chkScanForNFTs.Enabled;
 
     chkScanForUniswapPairs.Enabled := Chain = web3.Ethereum;
@@ -206,7 +206,13 @@ end;
 
 function TfrmMain.Chain: TChain;
 begin
-  Result := TChain(cboChain.Items.Objects[cboChain.ItemIndex]);
+  const chain = web3.Chain(UInt32(cboChain.Items.Objects[cboChain.ItemIndex]));
+  if chain.IsOk then
+  begin
+    Result := chain.Value^;
+    EXIT;
+  end;
+  Result := web3.Ethereum;
 end;
 
 procedure TfrmMain.Clear;
@@ -299,7 +305,19 @@ const
 begin
   Self.Caption := Self.Caption + ' v' + VERSION;
   Grid.AutoHide := TBehaviorBoolean.False;
-  for var C in CHAINS do cboChain.Items.AddObject(C.Name, TObject(C));
+  cboChain.Items.BeginUpdate;
+  try
+    cboChain.Items.AddObject(web3.Ethereum.Name, TObject(web3.Ethereum.Id));
+    cboChain.Items.AddObject(web3.Goerli.Name,   TObject(web3.Goerli.Id));
+    cboChain.Items.AddObject(web3.BNB.Name,      TObject(web3.BNB.Id));
+    cboChain.Items.AddObject(web3.Polygon.Name,  TObject(web3.Polygon.Id));
+    cboChain.Items.AddObject(web3.Optimism.Name, TObject(web3.Optimism.Id));
+    cboChain.Items.AddObject(web3.Arbitrum.Name, TObject(web3.Arbitrum.Id));
+    cboChain.Items.AddObject(web3.Fantom.Name,   TObject(web3.Fantom.Id));
+    cboChain.Items.AddObject(web3.Gnosis.Name,   TObject(web3.Gnosis.Id));
+  finally
+    cboChain.Items.EndUpdate;
+  end;
   cboChain.ItemIndex := 0;
   edtOwner.SetFocus;
 end;
@@ -674,7 +692,7 @@ begin
   Result := [];
   if (Chain = web3.Ethereum) and chkScanForUniswapPairs.IsChecked then
     Result := Result + [UniswapPairs];
-  if (Chain in [web3.Ethereum, web3.Goerli]) and chkScanForNFTs.IsChecked then
+  if ((Chain = web3.Ethereum) or (Chain = web3.Goerli)) and chkScanForNFTs.IsChecked then
     Result := Result + [NFTs];
 end;
 
