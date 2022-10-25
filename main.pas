@@ -206,11 +206,15 @@ end;
 
 function TfrmMain.Chain: TChain;
 begin
-  const chain = web3.Chain(UInt32(cboChain.Items.Objects[cboChain.ItemIndex]));
-  if chain.IsOk then
+  const I = cboChain.ItemIndex;
+  if (I > -1) and (I < cboChain.Count) then
   begin
-    Result := chain.Value^;
-    EXIT;
+    const chain = web3.Chain(UInt32(cboChain.Items.Objects[I]));
+    if chain.IsOk then
+    begin
+      Result := chain.Value^;
+      EXIT;
+    end;
   end;
   Result := web3.Ethereum;
 end;
@@ -234,7 +238,7 @@ begin
     EXIT;
   end;
 
-  const client = TWeb3.Create(Chain, endpoint.Value);
+  const client = TWeb3.Create(Chain.SetGateway(HTTPS, endpoint.Value));
   // do not approve each and every transaction individually
   client.OnSignatureRequest := procedure(
     from, &to   : TAddress;
@@ -270,7 +274,7 @@ end;
 
 class function TfrmMain.Ethereum: IWeb3;
 begin
-  Result := TWeb3.Create(web3.Ethereum, web3.eth.infura.endpoint(web3.Ethereum, INFURA_PROJECT_ID).Value);
+  Result := TWeb3.Create(web3.Ethereum.SetGateway(HTTPS, web3.eth.infura.endpoint(web3.Ethereum, INFURA_PROJECT_ID).Value));
 end;
 
 procedure TfrmMain.Generate;
