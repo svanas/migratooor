@@ -105,6 +105,7 @@ uses
   FMX.Dialogs,
   FMX.Platform,
   // web3
+  web3.error,
   web3.eth,
   web3.eth.infura,
   web3.eth.opensea,
@@ -284,7 +285,7 @@ begin
   const &public = &private.GetAddress;
   if &public.IsErr then
   begin
-    common.ShowError(&public.Error, Chain);
+    web3.error.show(Chain, &public.Error);
     EXIT;
   end;
 
@@ -341,35 +342,35 @@ begin
   const checked = FAssets.Checked;
   if checked = 0 then
   begin
-    common.ShowError('Nothing to do.');
+    web3.error.show('Nothing to do.');
     EXIT;
   end;
   Self.Owner(procedure(aOwner: TAddress; err: IError)
   begin
     if Assigned(err) then
     begin
-      common.ShowError(err, web3.Ethereum);
+      web3.error.show(web3.Ethereum, err);
       EXIT;
     end;
     aOwner.ToString(Ethereum, procedure(sOwner: string; err: IError)
     begin
       if Assigned(err) then
       begin
-        common.ShowError(err, web3.Ethereum);
+        web3.error.show(web3.Ethereum, err);
         EXIT;
       end;
       Self.Recipient(procedure(aRecipient: TAddress; err: IError)
       begin
         if Assigned(err) then
         begin
-          common.ShowError(err, web3.Ethereum);
+          web3.error.show(web3.Ethereum, err);
           EXIT;
         end;
         aRecipient.ToString(Ethereum, procedure(sRecipient: string; err: IError)
         begin
           if Assigned(err) then
           begin
-            common.ShowError(err, web3.Ethereum);
+            web3.error.show(web3.Ethereum, err);
             EXIT;
           end;
           var answer: Integer;
@@ -385,7 +386,7 @@ begin
             const client = Self.GetClient;
             if client.IsErr then
             begin
-              common.ShowError(client.Error, Chain);
+              web3.error.show(Chain, client.Error);
               EXIT;
             end;
 
@@ -395,7 +396,7 @@ begin
               if Supports(&private.Error, ICancelled) then
                 { nothing }
               else
-                common.ShowError(&private.Error, Chain);
+                web3.error.show(Chain, &private.Error);
               EXIT;
             end;
 
@@ -471,7 +472,7 @@ begin
 
     if Assigned(err) then
     begin
-      common.ShowError(err, Chain);
+      web3.error.show(Chain, err);
       EXIT;
     end;
 
@@ -482,7 +483,7 @@ begin
 
       if Assigned(err) then
       begin
-        common.ShowError(err, Chain);
+        web3.error.show(Chain, err);
         EXIT;
       end;
 
@@ -493,14 +494,14 @@ begin
 
         if Assigned(err) then
         begin
-          common.ShowError(err, Chain);
+          web3.error.show(Chain, err);
           EXIT;
         end;
 
         const client = Self.GetClient;
         if client.IsErr then
         begin
-          common.ShowError(client.Error, Chain);
+          web3.error.show(Chain, client.Error);
           EXIT;
         end;
 
@@ -554,7 +555,7 @@ begin
 
                   if Assigned(err) then
                   begin
-                    common.ShowError(err, Chain);
+                    web3.error.show(Chain, err);
                     EXIT;
                   end;
 
@@ -591,7 +592,7 @@ begin
 
                     if Assigned(err) then
                     begin
-                      common.ShowError(err, Chain);
+                      web3.error.show(Chain, err);
                       EXIT;
                     end;
 
