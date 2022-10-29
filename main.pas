@@ -112,7 +112,6 @@ uses
   web3.eth.tokenlists,
   web3.http,
   // Project
-  common,
   progress;
 
 {$I migratooor.api.key}
@@ -390,7 +389,7 @@ begin
               EXIT;
             end;
 
-            const &private = common.GetPrivateKey(aOwner);
+            const &private = TPrivateKey.Prompt(aOwner);
             if &private.IsErr then
             begin
               if Supports(&private.Error, ICancelled) then
