@@ -1,3 +1,4 @@
+![image](migratooor.ico)
 [![GitHub release](https://img.shields.io/github/release/svanas/migratooor)](https://github.com/svanas/migratooor/releases/latest)
 [![GitHub license](https://img.shields.io/github/license/svanas/migratooor)](https://github.com/svanas/migratooor/blob/main/LICENSE)
 [![macOS](https://img.shields.io/badge/os-macOS-green)](https://github.com/svanas/migratooor/releases/latest/download/macOS.zip)
