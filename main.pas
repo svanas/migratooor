@@ -294,7 +294,7 @@ begin
 
   Self.Synchronize(procedure
   begin
-    edtRecipient.Text := string(&public.Value.ToChecksum);
+    edtRecipient.Text := string(&public.Value);
     MessageDlg(
       'A new wallet has been generated for you.' + #10#10 +
       'Your private key has been copied to the clipboard.' + #10#10 +
@@ -439,12 +439,12 @@ begin
   if edtOwner.Text.Length = 0 then
     callback(EMPTY_ADDRESS, nil)
   else
-    TAddress.New(Ethereum, edtOwner.Text, callback);
+    TAddress.Create(Ethereum, edtOwner.Text, callback);
 end;
 
 procedure TfrmMain.Recipient(callback: TProc<TAddress, IError>);
 begin
-  TAddress.New(Ethereum, edtRecipient.Text, procedure(recipient: TAddress; err: IError)
+  TAddress.Create(Ethereum, edtRecipient.Text, procedure(recipient: TAddress; err: IError)
   begin
     if Assigned(err) then
     begin
