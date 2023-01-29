@@ -92,9 +92,9 @@ object frmMain: TfrmMain
       Anchors = [akLeft, akTop, akRight]
       Enabled = False
       IsChecked = True
-      Position.X = 9.000000000000000000
+      Position.X = 8.000000000000000000
       Position.Y = 89.000000000000000000
-      Size.Width = 539.000000000000000000
+      Size.Width = 352.000000000000000000
       Size.Height = 19.000000000000000000
       Size.PlatformDefault = False
       TabOrder = 3
@@ -104,9 +104,9 @@ object frmMain: TfrmMain
     object chkScanForNFTs: TCheckBox
       Anchors = [akLeft, akTop, akRight]
       IsChecked = True
-      Position.X = 9.000000000000000000
+      Position.X = 8.000000000000000000
       Position.Y = 35.000000000000000000
-      Size.Width = 539.000000000000000000
+      Size.Width = 352.000000000000000000
       Size.Height = 19.000000000000000000
       Size.PlatformDefault = False
       TabOrder = 1
@@ -119,7 +119,7 @@ object frmMain: TfrmMain
       IsChecked = True
       Position.X = 8.000000000000000000
       Position.Y = 8.000000000000000000
-      Size.Width = 540.000000000000000000
+      Size.Width = 352.000000000000000000
       Size.Height = 19.000000000000000000
       Size.PlatformDefault = False
       TabOrder = 0
@@ -127,9 +127,9 @@ object frmMain: TfrmMain
     end
     object chkScanForUniswapPairs: TCheckBox
       Anchors = [akLeft, akTop, akRight]
-      Position.X = 9.000000000000000000
+      Position.X = 8.000000000000000000
       Position.Y = 62.000000000000000000
-      Size.Width = 539.000000000000000000
+      Size.Width = 352.000000000000000000
       Size.Height = 19.000000000000000000
       Size.PlatformDefault = False
       TabOrder = 2

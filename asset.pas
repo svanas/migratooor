@@ -21,7 +21,7 @@ type
     function Bitmap: TBitmap;
     function Checked: Boolean;
     function Check(Value: Boolean): IAsset;
-    function LogoURI: string;
+    function Logo: TURL;
     function Name: string;
     procedure Transfer(client: IWeb3; from: TPrivateKey; &to: TAddress; callback: TProc<TTxHash, IError>);
   end;
@@ -45,7 +45,8 @@ uses
   // web3
   web3.eth.erc20,
   web3.eth.erc721,
-  web3.eth.erc1155;
+  web3.eth.erc1155,
+  web3.eth.tx;
 
 {----------------------------------- TAsset -----------------------------------}
 
@@ -57,36 +58,36 @@ type
     FBitmap  : TBitmap;
     FChecked : Boolean;
     FDecimals: Integer;
-    FLogoURI : string;
+    FLogo    : TURL;
     FName    : string;
-    FStandard: TStandard;
+    FType    : TAssetType;
     FFTokenId: BigInteger;
   public
     function Balance: Double;
     function Bitmap: TBitmap;
     function Checked: Boolean;
     function Check(Value: Boolean): IAsset;
-    function LogoURI: string;
+    function Logo: TURL;
     function Name: string;
     procedure Transfer(client: IWeb3; from: TPrivateKey; &to: TAddress; callback: TProc<TTxHash, IError>);
     constructor Create(
-      aStandard  : TStandard;
+      aType      : TAssetType;
       aAddress   : TAddress;
       aTokenId   : BigInteger;
       const aName: string;
       aDecimals  : Integer;
-      const aLogo: string;
+      const aLogo: TURL;
       aBalance   : BigInteger);
     destructor Destroy; override;
   end;
 
 constructor TAsset.Create(
-  aStandard  : TStandard;
+  aType      : TAssetType;
   aAddress   : TAddress;
   aTokenId   : BigInteger;
   const aName: string;
   aDecimals  : Integer;
-  const aLogo: string;
+  const aLogo: TURL;
   aBalance   : BigInteger);
 begin
   inherited Create;
@@ -94,9 +95,9 @@ begin
   FBalance  := aBalance;
   FChecked  := True;
   FDecimals := aDecimals;
-  FLogoURI  := aLogo;
+  FLogo     := aLogo;
   FName     := aName;
-  FStandard := aStandard;
+  FType     := aType;
   FFTokenId := aTokenId;
 end;
 
@@ -131,9 +132,9 @@ begin
   Result := Self;
 end;
 
-function TAsset.LogoURI: string;
+function TAsset.Logo: TURL;
 begin
-  Result := FLogoURI.Replace('ipfs://', 'https://ipfs.io/ipfs/');
+  Result := FLogo.Replace('ipfs://', 'https://ipfs.io/ipfs/');
 end;
 
 function TAsset.Name: string;
@@ -143,7 +144,9 @@ end;
 
 procedure TAsset.Transfer(client: IWeb3; from: TPrivateKey; &to: TAddress; callback: TProc<TTxHash, IError>);
 begin
-  case FStandard of
+  case FType of
+    native:
+      web3.eth.tx.sendTransaction(client, from, &to, FBalance, callback);
     erc20:
     begin
       const erc20 = TERC20.Create(client, FAddress);
@@ -218,12 +221,12 @@ end;
 
 function Create(const aToken: IToken; aBalance: BigInteger): IAsset;
 begin
-  Result := TAsset.Create(erc20, aToken.Address, 0, aToken.Name, aToken.Decimals, aToken.LogoURI, aBalance);
+  Result := TAsset.Create(erc20, aToken.Address, 0, aToken.Name, aToken.Decimals, aToken.Logo, aBalance);
 end;
 
 function Create(const aNFT: INFT): IAsset;
 begin
-  Result := TAsset.Create(aNFT.Standard, aNFT.Address, aNFT.TokenId, aNFT.Name, 0, aNFT.ImageURL, 1);
+  Result := TAsset.Create(aNFT.Asset, aNFT.Address, aNFT.TokenId, aNFT.Name, 0, aNFT.Image, 1);
 end;
 
 end.

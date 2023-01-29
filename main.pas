@@ -644,13 +644,13 @@ begin
                   // foreach
                   procedure(idx: Integer; next: TProc)
                   begin
-                    if FAssets[idx].LogoURI.IsEmpty then
+                    if FAssets[idx].Logo.IsEmpty then
                     begin
                       next;
                       EXIT;
                     end;
 
-                    web3.http.get(FAssets[idx].LogoURI, [], procedure(img: IHttpResponse; err: IError)
+                    web3.http.get(FAssets[idx].Logo, [], procedure(img: IHttpResponse; err: IError)
                     begin
                       if Self.Cancelled then EXIT;
 
