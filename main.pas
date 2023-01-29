@@ -200,7 +200,9 @@ begin
   if Result and P.Visible then
   begin
     P.Close;
-    Self.Active := True;
+    repeat
+      TThread.Sleep(100);
+    until not P.Visible;
   end;
 end;
 
@@ -426,7 +428,10 @@ begin
                 progress.Get(Self).Close;
               end
             );
-            progress.Get(Self).Prompt(Format('Sending %d transactions. Please wait...', [checked]));
+            Self.Synchronize(procedure
+            begin
+              progress.Get(Self).Prompt(Format('Sending %d transactions. Please wait...', [checked]));
+            end);
           end;
         end, True);
       end);
