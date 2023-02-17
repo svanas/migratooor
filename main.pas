@@ -240,7 +240,7 @@ begin
     EXIT;
   end;
 
-  const client = TWeb3.Create(Chain.SetGateway(HTTPS, endpoint.Value));
+  const client = TWeb3.Create(Chain.SetRPC(HTTPS, endpoint.Value));
   // do not approve each and every transaction individually
   client.OnSignatureRequest := procedure(
     from, &to   : TAddress;
@@ -276,7 +276,7 @@ end;
 
 class function TfrmMain.Ethereum: IWeb3;
 begin
-  Result := TWeb3.Create(web3.Ethereum.SetGateway(HTTPS, web3.eth.infura.endpoint(web3.Ethereum, INFURA_PROJECT_ID).Value));
+  Result := TWeb3.Create(web3.Ethereum.SetRPC(HTTPS, web3.eth.infura.endpoint(web3.Ethereum, INFURA_PROJECT_ID).Value));
 end;
 
 procedure TfrmMain.Generate;
