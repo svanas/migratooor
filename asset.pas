@@ -148,14 +148,7 @@ begin
     native:
       web3.eth.tx.sendTransaction(client, from, &to, FBalance, callback);
     erc20:
-    begin
-      const erc20 = TERC20.Create(client, FAddress);
-      try
-        erc20.Transfer(from, &to, FBalance, callback);
-      finally
-        erc20.Free;
-      end;
-    end;
+      web3.eth.erc20.create(client, FAddress).Transfer(from, &to, FBalance, callback);
     erc721:
     begin
       const erc721 = TERC721.Create(client, FAddress);

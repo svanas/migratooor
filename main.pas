@@ -212,7 +212,7 @@ begin
   if (I > -1) and (I < cboChain.Count) then
   begin
     const chain = web3.Chain(UInt32(cboChain.Items.Objects[I]));
-    if chain.IsOk then
+    if chain.isOk then
     begin
       Result := chain.Value^;
       EXIT;
@@ -234,7 +234,7 @@ end;
 function TfrmMain.GetClient: IResult<IWeb3>;
 begin
   const endpoint = web3.eth.infura.endpoint(Chain, INFURA_PROJECT_ID);
-  if endpoint.IsErr then
+  if endpoint.isErr then
   begin
     Result := TResult<IWeb3>.Err(nil, endpoint.Error);
     EXIT;
@@ -284,7 +284,7 @@ begin
   const &private = TPrivateKey.Generate;
 
   const &public = &private.GetAddress;
-  if &public.IsErr then
+  if &public.isErr then
   begin
     web3.error.show(Chain, &public.Error);
     EXIT;
@@ -385,14 +385,14 @@ begin
           if answer = mrYes then
           begin
             const client = Self.GetClient;
-            if client.IsErr then
+            if client.isErr then
             begin
               web3.error.show(Chain, client.Error);
               EXIT;
             end;
 
             const &private = TPrivateKey.Prompt(aOwner);
-            if &private.IsErr then
+            if &private.isErr then
             begin
               if Supports(&private.Error, ICancelled) then
                 { nothing }
@@ -503,7 +503,7 @@ begin
         end;
 
         const client = Self.GetClient;
-        if client.IsErr then
+        if client.isErr then
         begin
           web3.error.show(Chain, client.Error);
           EXIT;
