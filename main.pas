@@ -243,10 +243,10 @@ begin
   const client = TWeb3.Create(Chain.SetRPC(HTTPS, endpoint.Value));
   // do not approve each and every transaction individually
   client.OnSignatureRequest := procedure(
-    from, &to   : TAddress;
-    gasPrice    : TWei;
-    estimatedGas: BigInteger;
-    callback    : TSignatureRequestResult)
+    const from, &to   : TAddress;
+    const gasPrice    : TWei;
+    const estimatedGas: BigInteger;
+    const callback    : TSignatureRequestResult)
   begin
     callback(True, nil);
   end;
@@ -313,14 +313,15 @@ begin
   Grid.AutoHide := TBehaviorBoolean.False;
   cboChain.Items.BeginUpdate;
   try
-    cboChain.Items.AddObject(web3.Ethereum.Name, TObject(web3.Ethereum.Id));
-    cboChain.Items.AddObject(web3.Goerli.Name,   TObject(web3.Goerli.Id));
-    cboChain.Items.AddObject(web3.BNB.Name,      TObject(web3.BNB.Id));
-    cboChain.Items.AddObject(web3.Polygon.Name,  TObject(web3.Polygon.Id));
-    cboChain.Items.AddObject(web3.Optimism.Name, TObject(web3.Optimism.Id));
-    cboChain.Items.AddObject(web3.Arbitrum.Name, TObject(web3.Arbitrum.Id));
-    cboChain.Items.AddObject(web3.Fantom.Name,   TObject(web3.Fantom.Id));
-    cboChain.Items.AddObject(web3.Gnosis.Name,   TObject(web3.Gnosis.Id));
+    cboChain.Items.AddObject(web3.Ethereum.Name,   TObject(web3.Ethereum.Id));
+    cboChain.Items.AddObject(web3.Goerli.Name,     TObject(web3.Goerli.Id));
+    cboChain.Items.AddObject(web3.BNB.Name,        TObject(web3.BNB.Id));
+    cboChain.Items.AddObject(web3.Polygon.Name,    TObject(web3.Polygon.Id));
+    cboChain.Items.AddObject(web3.Optimism.Name,   TObject(web3.Optimism.Id));
+    cboChain.Items.AddObject(web3.Arbitrum.Name,   TObject(web3.Arbitrum.Id));
+    cboChain.Items.AddObject(web3.Fantom.Name,     TObject(web3.Fantom.Id));
+    cboChain.Items.AddObject(web3.Gnosis.Name,     TObject(web3.Gnosis.Id));
+    cboChain.Items.AddObject(web3.PulseChain.Name, TObject(web3.PulseChain.Id));
   finally
     cboChain.Items.EndUpdate;
   end;
