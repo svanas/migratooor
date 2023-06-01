@@ -292,7 +292,7 @@ begin
 
   var svc: IFMXClipboardService;
   if TPlatformServices.Current.SupportsPlatformService(IFMXClipboardService, svc) then
-    svc.SetClipboard(string(&private));
+    svc.SetClipboard(&private.ToString);
 
   Self.Synchronize(procedure
   begin
@@ -443,23 +443,23 @@ end;
 procedure TfrmMain.Owner(callback: TProc<TAddress, IError>);
 begin
   if edtOwner.Text.Length = 0 then
-    callback(EMPTY_ADDRESS, nil)
+    callback(TAddress.Zero, nil)
   else
-    TAddress.Create(Ethereum, edtOwner.Text, callback);
+    TAddress.FromName(Ethereum, edtOwner.Text, callback);
 end;
 
 procedure TfrmMain.Recipient(callback: TProc<TAddress, IError>);
 begin
-  TAddress.Create(Ethereum, edtRecipient.Text, procedure(recipient: TAddress; err: IError)
+  TAddress.FromName(Ethereum, edtRecipient.Text, procedure(recipient: TAddress; err: IError)
   begin
     if Assigned(err) then
     begin
-      callback(EMPTY_ADDRESS, err);
+      callback(TAddress.Zero, err);
       EXIT;
     end;
     if recipient.IsZero then
     begin
-      callback(EMPTY_ADDRESS, TError.Create('Recipient address is invalid.'));
+      callback(TAddress.Zero, TError.Create('Recipient address is invalid.'));
       EXIT;
     end;
     callback(recipient, nil);
