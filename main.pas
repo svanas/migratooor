@@ -149,7 +149,7 @@ begin
       end);
     end);
 
-    chkScanForNFTs.Enabled := (Chain = web3.Ethereum) or (Chain = web3.Goerli);
+    chkScanForNFTs.Enabled   := Chain = web3.Ethereum;
     chkScanForNFTs.IsChecked := chkScanForNFTs.Enabled;
 
     chkScanForUniswapPairs.Enabled := Chain = web3.Ethereum;
@@ -314,7 +314,6 @@ begin
   cboChain.Items.BeginUpdate;
   try
     cboChain.Items.AddObject(web3.Ethereum.Name,   TObject(web3.Ethereum.Id));
-    cboChain.Items.AddObject(web3.Goerli.Name,     TObject(web3.Goerli.Id));
     cboChain.Items.AddObject(web3.BNB.Name,        TObject(web3.BNB.Id));
     cboChain.Items.AddObject(web3.Polygon.Name,    TObject(web3.Polygon.Id));
     cboChain.Items.AddObject(web3.Optimism.Name,   TObject(web3.Optimism.Id));
@@ -702,7 +701,7 @@ begin
   Result := [];
   if (Chain = web3.Ethereum) and chkScanForUniswapPairs.IsChecked then
     Result := Result + [UniswapPairs];
-  if ((Chain = web3.Ethereum) or (Chain = web3.Goerli)) and chkScanForNFTs.IsChecked then
+  if (Chain = web3.Ethereum) and chkScanForNFTs.IsChecked then
     Result := Result + [NFTs];
 end;
 

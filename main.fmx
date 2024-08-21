@@ -43,6 +43,7 @@ object frmMain: TfrmMain
     Position.Y = 8.000000000000000000
     TabOrder = 3
     Text = 'Scan'
+    TextSettings.Trimming = None
     OnClick = btnScanClick
   end
   object Grid: TGrid
@@ -64,17 +65,21 @@ object frmMain: TfrmMain
     Viewport.Height = 429.000000000000000000
     object colCheck: TCheckColumn
       HorzAlign = Center
+      HeaderSettings.TextSettings.WordWrap = False
       Size.Width = 32.000000000000000000
     end
     object colImage: TImageColumn
+      HeaderSettings.TextSettings.WordWrap = False
       ReadOnly = True
       Size.Width = 32.000000000000000000
     end
     object colName: TStringColumn
+      HeaderSettings.TextSettings.WordWrap = False
       ReadOnly = True
       Size.Width = 200.000000000000000000
     end
     object colBalance: TFloatColumn
+      HeaderSettings.TextSettings.WordWrap = False
       ReadOnly = True
       DecimalDigits = 8
       Size.Width = 120.000000000000000000
@@ -161,6 +166,7 @@ object frmMain: TfrmMain
     object btnNew: TEditButton
       CanFocus = False
       Cursor = crArrow
+      TextSettings.Trimming = None
       Hint = 'Generate new wallet'
       Size.Width = 48.000000000000000000
       Size.Height = 18.000000000000000000
@@ -177,6 +183,7 @@ object frmMain: TfrmMain
     Position.Y = 603.000000000000000000
     TabOrder = 8
     Text = 'Migrate'
+    TextSettings.Trimming = None
     OnClick = btnMigrateClick
   end
 end
